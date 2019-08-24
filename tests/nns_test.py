@@ -1,6 +1,7 @@
 import unittest
 import tensorflow as tf
 from nns import LSH, ANN
+import time
 
 
 class TestANN(unittest.TestCase):
@@ -105,11 +106,19 @@ class TestLSH(unittest.TestCase):
 
     @unittest.skip
     def test_op(self):
-        dims = [1, 2, 3]
-        lsh = LSH(dims=dims, w=3)
-        for _ in range(10):
-            x = [tf.random.normal(shape=[dim]) for dim in dims]
-            print("input: ", [str(x_i.numpy()) for x_i in x], ", hash: ", lsh.hash(x))
+        iter = 1
+        dims, w, cache_no = [1, 10 ** 7, 1], 3, [10, 10, 10]
+        lsh = LSH(dims=dims, w=w, cache_no=cache_no)
+        xs = [[tf.random.normal(shape=[dim]) for dim in dims] for _ in range(iter)]
+
+        time1 = time.time()
+        _ = [lsh.hash(x) for x in xs]
+        time2 = time.time()
+        _ = [lsh.hash(x) for x in xs]
+        time3 = time.time()
+
+        print("Runtime of #1 execution: ", time2 - time1, "sec")
+        print("Runtime of #2 execution: ", time3 - time2, "sec")
 
     def test_init_1(self):
         dims, w = [1, 2, 3], 10
@@ -130,6 +139,17 @@ class TestLSH(unittest.TestCase):
         lsh = LSH(dims=dims, w=10)
         x = [tf.random.normal(shape=[dim]) for dim in dims]
         self.assertIsInstance(lsh.hash(x), int)
+
+    def test_cache(self):
+        iter = 10
+        dims, w, cache_no = [1, 10 ** 7, 1], 3, [3, 4, 5]
+        lsh = LSH(dims=dims, w=w, cache_no=cache_no)
+        xs = [[tf.random.normal(shape=[dim]) for dim in dims] for _ in range(iter)]
+
+        for x in xs:
+            lsh.hash(x)
+            self.assertEqual(len(lsh.cache), len(dims))
+            self.assertTrue(all([len(cache_i) <= cache_no_i for cache_i, cache_no_i in zip(lsh.cache, cache_no)]))
 
 
 if __name__ == '__main__':

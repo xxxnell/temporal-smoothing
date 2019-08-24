@@ -106,6 +106,8 @@ class LSH:
     Stable distribution Locality-sensitive hashing (LSH) for rank 2 vector.
     h(x) = ⌊ (a * x + b) / w ⌋, where a ~ N(0, 1) and b ~ U[0, w] for given w.
 
+    cache: ([(x_0, ax_0), ...], [(x_1, ax_1), ...], ...)
+
     See https://en.wikipedia.org/wiki/Locality-sensitive_hashing#Stable_distributions or
         http://mlwiki.org/index.php/Euclidean_LSH
     """
@@ -120,7 +122,7 @@ class LSH:
         self.w = w
         self.a = a
         self.b = b
-        self.dims = dims
+        self.cache = tuple([[] for _ in range(len(dims))])
         self.cache_no = cache_no
 
     @staticmethod
@@ -133,7 +135,16 @@ class LSH:
 
     def hash(self, x, i=None):
         if i is None:
-            ax = sum([tf.tensordot(a_i, x_i, 1) for a_i, x_i in zip(self.a, x)])
+            ax = sum([self._ax(x_i, i) for x_i, i in zip(x, range(len(self.a)))])
         else:
-            ax = tf.tensordot(self.a[i], x, 1)
+            ax = self._ax(x, i)
         return math.ceil((ax + self.b) / self.w)
+
+    def _ax(self, x, i):
+        ax = next(iter([ax_i for x_i, ax_i in self.cache[i] if x == x_i]), None)
+        if ax is None:
+            ax = tf.tensordot(self.a[i], x, 1)
+            self.cache[i].append((x, ax))
+            if len(self.cache[i]) > self.cache_no[i]:
+                self.cache[i].pop()
+        return ax
