@@ -51,13 +51,21 @@ class TestANN(unittest.TestCase):
 
         self.assertEqual([ann.search(vec0) for ann, vec0 in zip(anns, vecs0)], vecs1)
 
-    def test_full_search(self):
+    def test_full_search_1(self):
         dims = [1, 2, 3]
         sumvec0 = [tf.ones(shape=[dim]) * 0.00 for dim in dims]
         sumvec1 = [tf.ones(shape=[dim]) * 0.01 for dim in dims]
         sumvec2 = [tf.ones(shape=[dim]) * 0.02 for dim in dims]
 
         self.assertEqual(ANN.full_search(sumvec0, [sumvec1, sumvec2]), sumvec1)
+
+    def test_full_search_2(self):
+        dim = 10
+        vec0 = tf.ones(shape=[dim]) * 0.00
+        vec1 = tf.ones(shape=[dim]) * 0.01
+        vec2 = tf.ones(shape=[dim]) * 0.02
+
+        self.assertEqual(ANN.full_search(vec0, [vec1, vec2]), vec1)
 
     def test_add(self):
         dims, hash_no = [1, 2, 3], 5

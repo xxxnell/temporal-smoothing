@@ -66,7 +66,12 @@ class ANN:
     def full_search(x, cs):
         distances = []
         for c in cs:
-            distances.append(tf.math.sqrt(sum([tf.math.square(tf.norm(c_i - x_i)) for c_i, x_i in zip(c, x)])))
+            if isinstance(x, list):
+                normsqr = sum([tf.math.square(tf.norm(c_i - x_i)) for c_i, x_i in zip(c, x)])
+            else:
+                normsqr = tf.math.square(tf.norm(c - x))
+            distances.append(tf.math.sqrt(normsqr))
+
         return cs[tf.math.argmin(distances)]
 
     def add(self, x):
