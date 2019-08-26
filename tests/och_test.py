@@ -43,7 +43,7 @@ class TestOCH(unittest.TestCase):
         self.assertEqual(len(och.nns), len(dims) + 1)
         self.assertEqual([nns.empty() for nns in och.nns], [False] * (len(dims) + 1))
 
-    def test_update(self):
+    def test_update_1(self):
         warmup = 50
         k, l, s, dims, hash_no = 5, 1.0, 0.5, [1, 2, 3], 5
         och = OCH(k, l, s, dims, hash_no)
@@ -52,6 +52,17 @@ class TestOCH(unittest.TestCase):
         for x in xs:
             och.update(x)
             self.assertTrue(len(och.cns) < k * 3)
+
+    def test_update_2(self):
+        warmup = 50
+        k, l, s, dims, hash_no = 5, 1.0, 1.0, [1, 2, 3], 5
+        och = OCH(k, l, s, dims, hash_no)
+        xs = [[tf.random.normal(shape=[dim]) for dim in dims] for _ in range(warmup)]
+
+        for x in xs:
+            c_new, n_diff = och.update(x)
+            self.assertEqual(c_new, x)
+            self.assertTrue(n_diff > 0)
 
     def test_sample(self):
         warmup = 50
