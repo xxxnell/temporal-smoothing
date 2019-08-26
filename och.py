@@ -52,11 +52,11 @@ class OCH():
         :param n: count of input vector
         :return: new codevector if exists, difference of the count (δn)
         """
-        c_new, n_diff = None, n
+        c_new, n_diff = None, 0.0
 
         c = self.nns[0].search(x)
         if c is None:
-            c, m = x, n
+            c_new, n_diff = x, n
             self.add(x, n)
         else:
             # Step A. Increase the count
@@ -96,7 +96,7 @@ class OCH():
     def _logit(x):
         if x >= 1:
             return math.inf
-        elif x <= -1:
+        elif x <= 0:
             return -math.inf
         else:
             return np.log(x / (1 - x))
