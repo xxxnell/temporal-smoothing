@@ -1,10 +1,32 @@
 import unittest
 import tensorflow as tf
-from nns import LSH, ANN
 import time
+from nns import LSH, ANN
 
 
 class TestANN(unittest.TestCase):
+
+    @unittest.skip
+    def test_op(self):
+        sample_no, query_no = 1, 10
+        dims, hash_no = [1, 10 ** 7], 3
+        anns = ANN.every(dims, hash_no, cache_no=[10] * len(dims))
+        ann = anns[0]
+        xs = [[tf.random.normal(shape=[dim]) for dim in dims] for _ in range(sample_no)]
+        query = [tf.zeros(shape=[dim]) for dim in dims]
+
+        for x in xs:
+            ann.add(x)
+
+        dts = []
+        for _ in range(query_no):
+            time1 = time.time()
+            ann.search(query)
+            time2 = time.time()
+            dts.append(time2 - time1)
+
+        for i, dt in enumerate(dts):
+            print("Runtime of #%d execution: " % i, dt * 1000, "ms")
 
     def test_every(self):
         dims, hash_no = [1, 2, 3], 3
@@ -104,21 +126,23 @@ class TestANN(unittest.TestCase):
 
 class TestLSH(unittest.TestCase):
 
-    @unittest.skip
+    # @unittest.skip
     def test_op(self):
-        iter = 1
-        dims, w, cache_no = [1, 10 ** 7, 1], 3, [10, 10, 10]
+        sample_no = 10
+        dims, w, cache_no = [1, 10 ** 7], 3, [10, 10]
         lsh = LSH(dims=dims, w=w, cache_no=cache_no)
-        xs = [[tf.random.normal(shape=[dim]) for dim in dims] for _ in range(iter)]
+        x1 = tf.ones(shape=[dims[1]])
+        xs = [[tf.random.normal(shape=[dims[0]]), x1] for _ in range(sample_no)]
 
-        time1 = time.time()
-        _ = [lsh.hash(x) for x in xs]
-        time2 = time.time()
-        _ = [lsh.hash(x) for x in xs]
-        time3 = time.time()
+        dts = []
+        for x in xs:
+            time1 = time.time()
+            lsh.hash(x)
+            time2 = time.time()
+            dts.append(time2 - time1)
 
-        print("Runtime of #1 execution: ", time2 - time1, "sec")
-        print("Runtime of #2 execution: ", time3 - time2, "sec")
+        for i, dt in enumerate(dts):
+            print("Runtime of #%d execution: " %i, dt * 1000, "ms")
 
     def test_init_1(self):
         dims, w = [1, 2, 3], 10
@@ -141,10 +165,10 @@ class TestLSH(unittest.TestCase):
         self.assertIsInstance(lsh.hash(x), int)
 
     def test_cache(self):
-        iter = 10
+        sample_no = 10
         dims, w, cache_no = [1, 10 ** 7, 1], 3, [3, 4, 5]
         lsh = LSH(dims=dims, w=w, cache_no=cache_no)
-        xs = [[tf.random.normal(shape=[dim]) for dim in dims] for _ in range(iter)]
+        xs = [[tf.random.normal(shape=[dim]) for dim in dims] for _ in range(sample_no)]
 
         for x in xs:
             lsh.hash(x)

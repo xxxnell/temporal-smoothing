@@ -27,13 +27,13 @@ class ANN:
         self.i = i
 
     @classmethod
-    def every(cls, dims, hash_no, w=None):
+    def every(cls, dims, hash_no, w=None, cache_no=None):
         if w is None:
             w = [0.5] * hash_no
 
         lshs = []
         for j in range(hash_no):
-            lshs.append(LSH(dims, w[j]))
+            lshs.append(LSH(dims, w[j], cache_no))
 
         anns = [cls(lshs)]
         for i in range(len(dims)):
@@ -67,9 +67,9 @@ class ANN:
         distances = []
         for c in cs:
             if isinstance(x, list):
-                normsqr = sum([tf.math.square(tf.norm(c_i - x_i)) for c_i, x_i in zip(c, x)])
+                normsqr = sum([tf.math.square(tf.norm(c_i - x_i)) if c_i is not x_i else 0 for c_i, x_i in zip(c, x)])
             else:
-                normsqr = tf.math.square(tf.norm(c - x))
+                normsqr = tf.math.square(tf.norm(c - x)) if c is not x else 0
             distances.append(tf.math.sqrt(normsqr))
 
         return cs[tf.math.argmin(distances)]
@@ -99,6 +99,9 @@ class ANN:
             hashx[_hash].remove(x)
             if len(hashx[_hash]) is 0:
                 hashx.pop(_hash, None)
+
+    def empty(self):
+        return len(self.xhashs) == 0 and all([len(hashx_dict) == 0 for hashx_dict in self.hashxs])
 
 
 class LSH:
