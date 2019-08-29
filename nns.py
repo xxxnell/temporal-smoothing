@@ -100,7 +100,7 @@ class ANN:
             if len(hashx[_hash]) is 0:
                 hashx.pop(_hash, None)
 
-    def empty(self):
+    def is_empty(self):
         return len(self.xhashs) == 0 and all([len(hashx_dict) == 0 for hashx_dict in self.hashxs])
 
 

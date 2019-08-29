@@ -10,10 +10,10 @@ class TestOCH(unittest.TestCase):
     def test_op(self):
         sample_no = 20
         k, l, s, hash_no = 5, 1, 1, 5
-        dim0, dim1 = 1, 10 ** 7
-        och = OCH(k, l, s, [dim0, dim1], hash_no, cache_no=[10, 10])
-        x1 = tf.ones(shape=[dim1])
-        xs = [[tf.random.normal(shape=[dim0]), x1] for _ in range(sample_no)]
+        dims = [1, 10 ** 7]
+        och = OCH(k, l, s, dims, hash_no, cache_no=[10, 10])
+        x1 = tf.ones(shape=[dims[1]])
+        xs = [[tf.random.normal(shape=[dims[0]]), x1] for _ in range(sample_no)]
 
         dts = []
         for x in xs:
@@ -32,7 +32,7 @@ class TestOCH(unittest.TestCase):
 
         self.assertEqual(len(och.cns), 0)
         self.assertEqual(len(och.nns), len(dims) + 1)
-        self.assertEqual([nns.empty() for nns in och.nns], [True] * (len(dims) + 1))
+        self.assertEqual([nns.is_empty() for nns in och.nns], [True] * (len(dims) + 1))
 
     def test_init_2(self):
         k, l, s, dims, hash_no = 5, 1, 1, [1, 2, 3], 5
@@ -41,7 +41,7 @@ class TestOCH(unittest.TestCase):
 
         self.assertEqual(len(och.cns), len(cns))
         self.assertEqual(len(och.nns), len(dims) + 1)
-        self.assertEqual([nns.empty() for nns in och.nns], [False] * (len(dims) + 1))
+        self.assertEqual([nns.is_empty() for nns in och.nns], [False] * (len(dims) + 1))
 
     def test_update_1(self):
         warmup = 50
@@ -60,7 +60,7 @@ class TestOCH(unittest.TestCase):
         xs = [[tf.random.normal(shape=[dim]) for dim in dims] for _ in range(warmup)]
 
         for x in xs:
-            c_new, n_diff = och.update(x)
+            c_new, n_diff, _ = och.update(x)
             self.assertEqual(c_new, x)
             self.assertTrue(n_diff > 0)
 
@@ -96,7 +96,7 @@ class TestOCH(unittest.TestCase):
             och.update(x)
 
         self.assertNotEqual([och.search(zero[i], i) for i in range(len(dims))], [None] * len(dims))
-        self.assertEqual([tf.shape(och.search(zero[i], i)).numpy() for i in range(len(dims))], dims)
+        self.assertEqual([[len(c_i) for c_i in och.search(zero[i], i)] for i in range(len(dims))], [dims] * len(dims))
 
     def test_expected(self):
         warmup = 50

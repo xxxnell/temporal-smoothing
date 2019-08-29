@@ -11,12 +11,14 @@ class OCH():
     :param cns: (codevector, count) tuple list
     """
 
-    def __init__(self, k, l, s, dims, hash_no, cns=None, w=None, cache_no=None):
+    def __init__(self, k, l, s, dims, hash_no, cns=None, cs=None, w=None, cache_no=None):
         """
         :param k: hyperparameter K
         :param l: hyperparameter λ
         :param s: hyperparameter σ(φ)
         """
+        if cs is not None and cns is None:
+            cns = [(c, 1.0) for c in cs]
         if cns is None:
             cns = []
         if cache_no is None:
@@ -52,7 +54,7 @@ class OCH():
         :param n: count of input vector
         :return: new codevector if exists, difference of the count (δn)
         """
-        c_new, n_diff = None, 0.0
+        c_new, n_diff, c_olds = None, 0.0, []
 
         c = self.nns[0].search(x)
         if c is None:
@@ -77,8 +79,9 @@ class OCH():
                 n_tot = self.n_tot()
                 if self._bernoulli(self._prob_remove(_n / n_tot)) is 1:
                     self.remove(_c)
+                    c_olds.append(_c)
 
-        return c_new, n_diff
+        return c_new, n_diff, c_olds
 
     @staticmethod
     def _bernoulli(p):
@@ -119,10 +122,14 @@ class OCH():
         if i is None:
             return self.nns[0].search(x)
         else:
-            return self.nns[i + 1].search(x)
+            c_i = self.nns[i + 1].search(x)
+            cs = [c for c, _ in self.cns if c[i] is c_i]
+            return next(iter(cs)) if len(cs) is not 0 else None
 
     def expected(self):
         n_tot = self.n_tot()
         svs = [[c_i * (n / n_tot) for c_i in c] for c, n in self.cns]
         return [sum(vs) for vs in list(map(list, zip(*svs)))]
 
+    def is_empty(self):
+        return len(self.cns) == 0 and self.nns.is_empty()
