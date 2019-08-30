@@ -64,15 +64,15 @@ class ANN:
 
     @staticmethod
     def full_search(x, cs):
-        distances = []
+        normsqrs = []
         for c in cs:
             if isinstance(x, list):
                 normsqr = sum([tf.math.square(tf.norm(c_i - x_i)) if c_i is not x_i else 0 for c_i, x_i in zip(c, x)])
             else:
                 normsqr = tf.math.square(tf.norm(c - x)) if c is not x else 0
-            distances.append(tf.math.sqrt(normsqr))
+            normsqrs.append(normsqr)
 
-        return cs[tf.math.argmin(distances)]
+        return cs[tf.math.argmin(normsqrs)]
 
     def add(self, x):
         hashs = tuple([lsh.hash(x, self.i) for lsh in self.lshs])
