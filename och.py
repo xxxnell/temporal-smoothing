@@ -136,7 +136,7 @@ class OCH():
         else:
             c_i = self.nns[i + 1].search(x)
             cs = [c for c, _ in self.cns if c[i] is c_i]
-            return next(iter(cs)) if len(cs) is not 0 else None
+            return next(iter(cs), None)
 
     def expected(self):
         svs = [[c_i * w for c_i in c] for c, w in self.cws()]

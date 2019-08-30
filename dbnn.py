@@ -26,13 +26,19 @@ class DBNN:
         self.table.clear()
 
     def update(self, x_0, n=1.0):
+        # Step A. Update OCH_X
         x_1 = self.och_x_1.sample()
         x = [x_0] + x_1
         c_new, n_diff, c_olds = self.och_x.update(x, n)
+
+        # Step B. Execute NN
         if c_new is not None:
             y = self.op(x)
             self.table.append((x, y))
         self.table = [(c, y) for c, y in self.table if c not in c_olds]
+
+        # Step C. Update OCH_Y
         c = self.och_x.search(x_0, 0)
-        y = next(iter([y for x, y in self.table if c == x]))
-        self.och_y.update(y, n_diff / self.och_x.n_tot() if n_diff > 0.0 else 0.0)
+        if c is not None:
+            y = next(iter([y for x, y in self.table if c == x]))
+            self.och_y.update(y, n_diff / self.och_x.n_tot() if n_diff > 0.0 else 0.0)
