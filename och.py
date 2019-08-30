@@ -57,29 +57,33 @@ class OCH():
         c_new, n_diff, c_olds = None, 0.0, []
 
         c = self.nns[0].search(x)
-        if c is None:
+        exists = c in [_c for _c, _ in self.cns]
+        if c is None or not exists:
             c_new, n_diff = x, n
             self.add(x, n)
         else:
             # Step A. Increase the count
-            m = next(iter([_n for _c, _n in self.cns if _c == c]))
-            self.cns = [(_c, _n + n) if _c == c else (_c, _n) for _c, _n in self.cns]
+            n_diff = n
+            m = next(iter([_n for _c, _n in self.cns if _c == c])) + n
+            self.cns = [(_c, m) if _c == c else (_c, _n) for _c, _n in self.cns]
 
             # Step B. Add a new codeword vector
             n_tot = self.n_tot()
-            gamma = math.exp(-1 * self.l / self.n_tot())
-            if self._bernoulli(self._prob_add(m / n_tot)) is 1:
-                c_new, n_diff = x, gamma * m
-                self.add(x, gamma * m)
-                self.cns = [(_c, (1 - gamma) * _n) if _c == c else (_c, _n) for _c, _n in self.cns]
+            gamma = math.exp(-1 * self.l / n_tot) if n_tot > 0.0 else 0.0
+            if self._bernoulli(self._prob_add(m / n_tot if n_tot > 0.0 else 1.0)) is 1:
+                c_new, n_diff = x, (1 - gamma) * m
+                self.cns = [(_c, gamma * m) if _c == c else (_c, _n) for _c, _n in self.cns]
+                self.add(x, (1 - gamma) * m)
             self.cns = [(_c, _n * gamma) for _c, _n in self.cns]
 
             # Step C. Remove old codeword vectors
+            n_tot = self.n_tot()
             for _c, _n in self.cns:
-                n_tot = self.n_tot()
-                if self._bernoulli(self._prob_remove(_n / n_tot)) is 1:
+                if self._bernoulli(self._prob_remove(_n / n_tot if n_tot > 0.0 else 1.0)) is 1:
                     self.remove(_c)
                     c_olds.append(_c)
+                    if c_new is None and _c == c or _c == c_new:
+                        c_new, n_diff = None, 0.0
 
         return c_new, n_diff, c_olds
 
@@ -113,9 +117,12 @@ class OCH():
     def n_tot(self):
         return sum([n for _, n in self.cns])
 
-    def sample(self):
+    def cws(self):
         n_tot = self.n_tot()
-        c, _ = self.cns[self._categorical([_n / n_tot for _, _n in self.cns])]
+        return [(c, n / n_tot) for c, n in self.cns]
+
+    def sample(self):
+        c, _ = self.cns[self._categorical([w for _, w in self.cws()])]
         return c
 
     def search(self, x, i=None):
@@ -127,9 +134,11 @@ class OCH():
             return next(iter(cs)) if len(cs) is not 0 else None
 
     def expected(self):
-        n_tot = self.n_tot()
-        svs = [[c_i * (n / n_tot) for c_i in c] for c, n in self.cns]
+        svs = [[c_i * w for c_i in c] for c, w in self.cws()]
         return [sum(vs) for vs in list(map(list, zip(*svs)))]
 
     def is_empty(self):
         return len(self.cns) == 0 and self.nns.is_empty()
+
+    def len(self):
+        return len(self.cns)
