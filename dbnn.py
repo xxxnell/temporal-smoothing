@@ -33,5 +33,5 @@ class DBNN:
             self.table.append((x, y))
         self.table = [(c, y) for c, y in self.table if c not in c_olds]
         c = self.och_x.search(x_0, 0)
-        y = next(iter([y for x, y in self.table if c is x]))
+        y = next(iter([y for x, y in self.table if c == x]))
         self.och_y.update(y, n_diff / self.och_x.n_tot())
