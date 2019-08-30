@@ -1,7 +1,3 @@
-from och import OCH
-import tensorflow as tf
-
-
 class DBNN:
     """
     DBNN for data stream.
@@ -23,6 +19,11 @@ class DBNN:
         self.och_x = och_x
         self.och_y = och_y
         self.table = table
+
+    def clear(self):
+        self.och_x.clear()
+        self.och_y.clear()
+        self.table.clear()
 
     def update(self, x_0, n=1.0):
         x_1 = self.och_x_1.sample()

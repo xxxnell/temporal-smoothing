@@ -41,6 +41,13 @@ class ANN:
 
         return anns
 
+    def clear(self):
+        for lsh in self.lshs:
+            lsh.clear()
+        self.xhashs.clear()
+        for hashx in self.hashxs:
+            hashx.clear()
+
     def search(self, x):
         hashs = tuple([lsh.hash(x, self.i) for lsh in self.lshs])
         candidates = []
@@ -127,6 +134,10 @@ class LSH:
         self.b = b
         self.cache = tuple([[] for _ in range(len(dims))])
         self.cache_no = cache_no
+
+    def clear(self):
+        for cache_i in self.cache:
+            cache_i.clear()
 
     @staticmethod
     def _normal(dim):

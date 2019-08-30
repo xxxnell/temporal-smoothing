@@ -36,6 +36,11 @@ class OCH():
         for c, n in cns:
             self.add(c, n)
 
+    def clear(self):
+        self.cns.clear()
+        for nns_i in self.nns:
+            nns_i.clear()
+
     def add(self, x, n):
         self.cns.append((x, n))
         self.nns[0].add(x)
