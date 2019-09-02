@@ -27,6 +27,7 @@ class OCH():
         self.k = k
         self.l = l
         self.s = s
+        self.dims = dims
         self.cns = []
         self.nns = ANN.every(dims, hash_no, w=w, cache_no=cache_no)
 
@@ -122,9 +123,15 @@ class OCH():
     def n_tot(self):
         return sum([n for _, n in self.cns])
 
+    def is_empty(self):
+        return len(self.cns) == 0 and self.nns.is_empty()
+
+    def len(self):
+        return len(self.cns)
+
     def cws(self):
         n_tot = self.n_tot()
-        return [(c, n / n_tot) for c, n in self.cns]
+        return [(c, n / n_tot) if n_tot > 0 else (c, 0.0) for c, n in self.cns]
 
     def sample(self):
         c, _ = self.cns[self._categorical([w for _, w in self.cws()])]
@@ -138,12 +145,19 @@ class OCH():
             cs = [c for c, _ in self.cns if c[i] is c_i]
             return next(iter(cs), None)
 
+    def moments(self):
+        axes = [0]
+        if len(self.cws()) > 0:
+            cs, ws = zip(*self.cws())
+            moms = [tf.nn.weighted_moments(tf.stack(c), axes, [[w] * dim for w in ws]) for dim, *c in zip(self.dims, *cs)]
+            mean, variance = list(zip(*moms))
+        else:
+            mean, variance = None, None
+        return mean, variance
+
     def expected(self):
-        svs = [[c_i * w for c_i in c] for c, w in self.cws()]
-        return [sum(vs) for vs in list(map(list, zip(*svs)))]
+        return self.moments()[0]
 
-    def is_empty(self):
-        return len(self.cns) == 0 and self.nns.is_empty()
+    def var(self):
+        return self.moments()[1]
 
-    def len(self):
-        return len(self.cns)
