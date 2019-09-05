@@ -1,8 +1,8 @@
 import math
 import numpy as np
-from nns import ANN
+from dbnn.nns import ANN
 import tensorflow as tf
-import time
+
 
 class OCH():
     """
