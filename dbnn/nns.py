@@ -153,7 +153,7 @@ class LSH:
     def _ax(self, x, i):
         ax = next(iter([ax_i for x_i, ax_i in self.cache[i] if x is x_i]), None)
         if ax is None:
-            ax = tf.tensordot(self.a[i], tf.reshape(x, [-1]), 1)
+            ax = tf.tensordot(self.a[i], tf.cast(tf.reshape(x, [-1]), tf.float32), 1)
             self.cache[i].append((x, ax))
             if len(self.cache[i]) > self.cache_no[i]:
                 self.cache[i].pop()
