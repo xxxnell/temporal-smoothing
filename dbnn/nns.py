@@ -54,18 +54,15 @@ class ANN:
         for hashx, hash in zip(self.hashxs, hashs):
             if hash in hashx:
                 candidates += hashx[hash]
-        if self.i is None:
-            candidates = [tuple(candidate) for candidate in candidates]
 
-        count = Counter(candidates).most_common()
-        candidates = [candidate for candidate, n in count if n >= count[0][1]]
-
-        if len(candidates) <= 1:
-            nn = next(iter(candidates), None)
+        counts = []
+        for x, _ in self.xhashs:
+            counts.append(len([x is candidate for candidate in candidates]))
+        if counts:
+            index, = np.where(counts == np.max(counts))
+            nn, _ = self.xhashs[index[-1]]
         else:
-            nn = self.full_search(x, candidates)
-        if self.i is None and nn is not None:
-            nn = list(nn)
+            nn = None
 
         return nn
 
@@ -86,26 +83,25 @@ class ANN:
 
         self.xhashs.append((x, hashs))
 
-        for hash, hashx_dict in zip(hashs, self.hashxs):
-            if hash in hashx_dict:
-                hashx_dict[hash].append(x)
+        for hash, hashx in zip(hashs, self.hashxs):
+            if hash in hashx:
+                hashx[hash].append(x)
             else:
-                hashx_dict[hash] = [x]
+                hashx[hash] = [x]
 
     def remove(self, x):
-        _hashs = ()
-        xhashs = []
-        for _x, hashs in self.xhashs:
-            if _x == x:
-                _hashs = hashs
+        hashs, xhashs = (), []
+        for _x, _hashs in self.xhashs:
+            if _x is x:
+                hashs = _hashs
             else:
-                xhashs.append((_x, hashs))
+                xhashs.append((_x, _hashs))
         self.xhashs = xhashs
 
-        for _hash, hashx in zip(_hashs, self.hashxs):
-            hashx[_hash].remove(x)
-            if len(hashx[_hash]) is 0:
-                hashx.pop(_hash, None)
+        for hash, hashx in zip(hashs, self.hashxs):
+            hashx[hash] = [_x for _x in hashx[hash] if x is not _x]
+            if len(hashx[hash]) is 0:
+                hashx.pop(hash, None)
 
     def is_empty(self):
         return len(self.xhashs) == 0 and all([len(hashx_dict) == 0 for hashx_dict in self.hashxs])
@@ -155,9 +151,9 @@ class LSH:
         return math.ceil((ax + self.b) / self.w)
 
     def _ax(self, x, i):
-        ax = next(iter([ax_i for x_i, ax_i in self.cache[i] if x == x_i]), None)
+        ax = next(iter([ax_i for x_i, ax_i in self.cache[i] if x is x_i]), None)
         if ax is None:
-            ax = tf.tensordot(self.a[i], x, 1)
+            ax = tf.tensordot(self.a[i], tf.reshape(x, [-1]), 1)
             self.cache[i].append((x, ax))
             if len(self.cache[i]) > self.cache_no[i]:
                 self.cache[i].pop()

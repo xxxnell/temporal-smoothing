@@ -109,15 +109,18 @@ class TestANN(unittest.TestCase):
             [[[1]] * hash_no] * (len(dims) + 1))
 
     def test_remove(self):
-        dims, hash_no = [1, 2, 3], 5
+        dims, hash_no, seed = [1, 2, 3], 5, 100
         anns = ANN.every(dims, hash_no)
+        tf.random.set_seed(seed)
         sumvec = [tf.random.normal(shape=[dim]) for dim in dims]
         vecs = [tf.random.normal(shape=[dim]) for dim in dims]
 
         anns[0].add(sumvec)
-        anns[0].remove(sumvec)
         for ann, vec in zip(anns[1:], vecs):
             ann.add(vec)
+
+        anns[0].remove(sumvec)
+        for ann, vec in zip(anns[1:], vecs):
             ann.remove(vec)
 
         self.assertEqual([ann.xhashs for ann in anns], [[]] * (len(dims) + 1))
@@ -126,7 +129,7 @@ class TestANN(unittest.TestCase):
 
 class TestLSH(unittest.TestCase):
 
-    # @unittest.skip
+    @unittest.skip
     def test_op(self):
         sample_no = 10
         dims, w, cache_no = [1, 10 ** 7], 3, [10, 10]

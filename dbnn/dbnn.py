@@ -35,10 +35,10 @@ class DBNN:
         if c_new is not None:
             y = self.op(x)
             self.table.append((x, y))
-        self.table = [(c, y) for c, y in self.table if c not in c_olds]
+        self.table = [(c, y) for c, y in self.table if len([c_old for c_old in c_olds if c_old is c]) is 0]
 
         # Step C. Update OCH_Y
         c = self.och_x.search(x_0, 0)
         if c is not None:
-            y = next(iter([y for x, y in self.table if c == x]))
+            y = next(iter([y for x, y in self.table if c is x]))
             self.och_y.update(y, n_diff / self.och_x.n_tot() if n_diff > 0.0 else 0.0)

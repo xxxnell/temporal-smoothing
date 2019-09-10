@@ -49,7 +49,7 @@ class OCH():
             nns.add(x_i)
 
     def remove(self, x):
-        self.cns = [(c, n) for c, n in self.cns if c != x]
+        self.cns = [(c, n) for c, n in self.cns if c is not x]
         self.nns[0].remove(x)
         for nns, c_i in zip(self.nns[1:], x):
             nns.remove(c_i)
@@ -63,22 +63,22 @@ class OCH():
         c_new, n_diff, c_olds = None, 0.0, []
 
         c = self.nns[0].search(x)
-        exists = c in [_c for _c, _ in self.cns]
+        exists = len([_c for _c, _ in self.cns if c is _c]) > 0
         if c is None or not exists:
             c_new, n_diff = x, n
             self.add(x, n)
         else:
             # Step A. Increase the count
             n_diff = n
-            m = next(iter([_n for _c, _n in self.cns if _c == c])) + n
-            self.cns = [(_c, m) if _c == c else (_c, _n) for _c, _n in self.cns]
+            m = next(iter([_n for _c, _n in self.cns if _c is c])) + n
+            self.cns = [(_c, m) if _c is c else (_c, _n) for _c, _n in self.cns]
 
             # Step B. Add a new codeword vector
             n_tot = self.n_tot()
             gamma = math.exp(-1 * self.l / n_tot) if n_tot > 0.0 else 0.0
             if self._bernoulli(self._prob_add(m / n_tot if n_tot > 0.0 else 1.0)) is 1:
                 c_new, n_diff = x, (1 - gamma) * m
-                self.cns = [(_c, gamma * m) if _c == c else (_c, _n) for _c, _n in self.cns]
+                self.cns = [(_c, gamma * m) if _c is c else (_c, _n) for _c, _n in self.cns]
                 self.add(x, (1 - gamma) * m)
             self.cns = [(_c, _n * gamma) for _c, _n in self.cns]
 
@@ -88,7 +88,7 @@ class OCH():
                 if self._bernoulli(self._prob_remove(_n / n_tot if n_tot > 0.0 else 1.0)) is 1:
                     self.remove(_c)
                     c_olds.append(_c)
-                    if c_new is None and _c == c or _c == c_new:
+                    if c_new is None and _c is c or _c is c_new:
                         c_new, n_diff = None, 0.0
 
         return c_new, n_diff, c_olds
@@ -124,7 +124,7 @@ class OCH():
         return sum([n for _, n in self.cns])
 
     def is_empty(self):
-        return len(self.cns) == 0 and self.nns.is_empty()
+        return len(self.cns) is 0 and self.nns.is_empty()
 
     def len(self):
         return len(self.cns)
@@ -149,8 +149,13 @@ class OCH():
         axes = [0]
         if len(self.cws()) > 0:
             cs, ws = zip(*self.cws())
-            moms = [tf.nn.weighted_moments(tf.stack(c), axes, [[w] * dim for w in ws]) for dim, *c in zip(self.dims, *cs)]
-            mean, variance = list(zip(*moms))
+
+            mean, variance = [], []
+            for c_is in zip(*cs):
+                ws_extend = [tf.ones(tf.shape(c_i)) * w for w, c_i in zip(ws, c_is)]
+                mean_i, variance_i = tf.nn.weighted_moments(tf.stack(c_is), axes, tf.stack(ws_extend))
+                mean.append(mean_i)
+                variance.append(variance_i)
         else:
             mean, variance = None, None
         return mean, variance
