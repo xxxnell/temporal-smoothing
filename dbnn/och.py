@@ -134,7 +134,10 @@ class OCH():
         return [(c, n / n_tot) if n_tot > 0 else (c, 0.0) for c, n in self.cns]
 
     def sample(self):
-        c, _ = self.cns[self._categorical([w for _, w in self.cws()])]
+        if self.cws():
+            c, _ = self.cns[self._categorical([w for _, w in self.cws()])]
+        else:
+            c = None
         return c
 
     def search(self, x, i=None):
