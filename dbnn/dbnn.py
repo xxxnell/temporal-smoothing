@@ -28,7 +28,7 @@ class DBNN:
     def update(self, x_0, n=1.0):
         # Step A. Update OCH_X
         x_1 = self.och_x_1.sample()
-        x = [x_0] + x_1
+        x = [x_0] + x_1 if x_1 is not None else [x_0]
         c_new, n_diff, c_olds = self.och_x.update(x, n)
 
         # Step B. Execute NN
