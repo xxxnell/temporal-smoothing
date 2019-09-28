@@ -6,7 +6,7 @@ from collections import Counter
 
 class ANN:
     """
-    Approximate nearest neighbor search for rank 2 vector (i.e., x0 ⊕ x1 ⊕ ...) using LSH.
+    Approximate nearest neighbor search for concat input vector (i.e., x = x0 ⊕ x1 ⊕ ...) using LSH.
     """
 
     def __init__(self, lshs, i=None, xhashs=None, hashxs=None):
@@ -109,7 +109,7 @@ class ANN:
 
 class LSH:
     """
-    Stable distribution Locality-sensitive hashing (LSH) for rank 2 vector.
+    Stable distribution Locality-sensitive hashing (LSH) for input vector.
     h(x) = ⌊ (a * x + b) / w ⌋, where a ~ N(0, 1) and b ~ U[0, w] for given w.
 
     cache: ([(x_0, ax_0), ...], [(x_1, ax_1), ...], ...)

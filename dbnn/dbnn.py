@@ -1,6 +1,6 @@
 class DBNN:
     """
-    DBNN for data stream.
+    DBNN for data stream, where DNN is augmented with OCHs as distribution estimator units of input and output stream.
     """
 
     def __init__(self, op, och_x_1, och_x, och_y, table=None):

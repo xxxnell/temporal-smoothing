@@ -6,9 +6,7 @@ import tensorflow as tf
 
 class OCH():
     """
-    Online Codevector Histogram (OCH)
-
-    :param cns: (codevector, count) tuple list
+    Online Codevector Histogram (OCH) to estimate the probability of non-stationary data stream as well as dataset.
     """
 
     def __init__(self, k, l, s, dims, hash_no, cns=None, cs=None, w=None, cache_no=None):
