@@ -1,7 +1,7 @@
 import unittest
 import tensorflow as tf
 import time
-from dbnn.och import OCH
+from vqbnn.och import OCH
 
 
 class TestOCH(unittest.TestCase):

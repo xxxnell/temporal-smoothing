@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from dbnn.nns import ANN
+from vqbnn.nns import ANN
 import tensorflow as tf
 
 

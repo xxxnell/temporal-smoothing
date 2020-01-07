@@ -1,7 +1,7 @@
 import unittest
 import tensorflow as tf
 import time
-from dbnn.nns import LSH, ANN
+from vqbnn.nns import LSH, ANN
 
 
 class TestANN(unittest.TestCase):

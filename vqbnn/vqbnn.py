@@ -1,4 +1,4 @@
-class DBNN:
+class VQBNN:
     """
     DBNN for data stream, where DNN is augmented with OCHs as distribution estimator units of input and output stream.
     """
