@@ -1,6 +1,7 @@
 import math
 import numpy as np
-from vqbnn.nns import ANN
+from vqbnn.ann import ANN
+from vqbnn.ann_argmax import ANNArgMax
 import tensorflow as tf
 
 
@@ -9,7 +10,7 @@ class OCH():
     Online Codevector Histogram (OCH) to estimate the probability of non-stationary data stream as well as dataset.
     """
 
-    def __init__(self, k, l, s, dims, hash_no, cns=None, cs=None, w=None, cache_no=None):
+    def __init__(self, k, l, s, dims, hash_no, cns=None, cs=None, w=None, cache_no=None, ann="all"):
         """
         :param k: hyperparameter K
         :param l: hyperparameter λ
@@ -27,7 +28,12 @@ class OCH():
         self.s = s
         self.dims = dims
         self.cns = []
-        self.nns = ANN.every(dims, hash_no, w=w, cache_no=cache_no)
+        if ann == "all":
+            self.nns = ANN.every(dims, hash_no, w=w, cache_no=cache_no)
+        elif ann == "argmax":
+            self.nns = ANNArgMax.every(dims, hash_no, w=w, cache_no=cache_no)
+        else:
+            raise ValueError
 
         self.phi = self._logit(self.s)
         self.pi_avg = 1 / self.k
