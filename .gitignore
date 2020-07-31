@@ -4,3 +4,5 @@ venv
 __pycache__
 datasets
 models_checkpoints
+leaderboard
+logs
