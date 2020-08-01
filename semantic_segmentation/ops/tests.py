@@ -16,10 +16,16 @@ def test(predict, dataset, num_classes,
     cms_bin = [np.zeros(cm_shape) for _ in range(len(bins) - 1)]
     confs_bin = [tf.keras.metrics.Mean() for _ in range(len(bins) - 1)]
 
-    for xs, ys in dataset.batch(batch_size):
+    dataset = dataset.batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
+    for xs, ys in dataset:
         batch_time = time.time()
         ys_pred = predict(xs)
         predict_times.append(time.time() - batch_time)
+
+        mask = ys >= 0
+        ys = tf.boolean_mask(ys, mask)
+        ys_pred = tf.boolean_mask(ys_pred, mask)
+
         nll_metric(ys, ys_pred)
         for cutoff, cm_group in zip(cutoffs, cms):
             cm_certain = cm(ys, ys_pred, num_classes, filter_min=cutoff)

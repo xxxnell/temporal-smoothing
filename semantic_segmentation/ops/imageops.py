@@ -20,8 +20,8 @@ def from_color(label, colors):
     indexed = []
     for color, index in colors.items():
         valid = tf.cast(tf.math.reduce_all(tf.math.equal(label, color), axis=-1), dtype=tf.int32)
-        indexed.append(valid * index)
-    indexed = tf.reduce_sum(indexed, axis=0)
+        indexed.append(valid * (index + 1))
+    indexed = tf.reduce_sum(indexed, axis=0) - 1
     return indexed
 
 

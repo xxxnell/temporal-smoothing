@@ -41,67 +41,66 @@ Label = namedtuple('Label', [
     'hasInstances',
 
     # Whether pixels having this class as ground truth label are ignored
-    # during evaluations or not
-    'ignoreInEval',
+    'ignore',
 
     # The color of this label
     'color',
 ])
 
 camvid_labels = [
-    # name, id, trainId, category, catId, hasInstances, ignoreInEval, color
-    Label('Void', None, None, 'Void', 0, None, None, (0, 0, 0)),
+    # name, id, trainId, category, catId, hasInstances, ignore, color
+    Label('Void', None, None, 'Void', 0, False, True, (0, 0, 0)),
 
-    Label('Sky', None, None, 'Sky', 1, None, None, (128, 128, 128)),
+    Label('Sky', None, None, 'Sky', 1, False, False, (128, 128, 128)),
 
-    Label('Bridge', None, None, 'Building', 2, None, None, (0, 128, 64)),
-    Label('Building', None, None, 'Building', 2, None, None, (128, 0, 0)),
-    Label('Wall', None, None, 'Building', 2, None, None, (64, 192, 0)),
-    Label('Tunnel', None, None, 'Building', 2, None, None, (64, 0, 64)),
-    Label('Archway', None, None, 'Building', 2, None, None, (192, 0, 128)),
+    Label('Bridge', None, None, 'Building', 2, False, False, (0, 128, 64)),
+    Label('Building', None, None, 'Building', 2, False, False, (128, 0, 0)),
+    Label('Wall', None, None, 'Building', 2, False, False, (64, 192, 0)),
+    Label('Tunnel', None, None, 'Building', 2, False, False, (64, 0, 64)),
+    Label('Archway', None, None, 'Building', 2, False, False, (192, 0, 128)),
 
-    Label('Column_Pole', None, None, 'Pole', 3, None, None, (192, 192, 128)),
-    Label('TrafficCone', None, None, 'Pole', 3, None, None, (0, 0, 64)),
+    Label('Column_Pole', None, None, 'Pole', 3, False, False, (192, 192, 128)),
+    Label('TrafficCone', None, None, 'Pole', 3, False, False, (0, 0, 64)),
 
-    Label('Road', None, None, 'Road', 4, None, None, (128, 64, 128)),
-    Label('LaneMkgsDriv', None, None, 'Road', 4, None, None, (128, 0, 192)),
-    Label('LaneMkgsNonDriv', None, None, 'Road', 4, None, None, (192, 0, 64)),
+    Label('Road', None, None, 'Road', 4, False, False, (128, 64, 128)),
+    Label('LaneMkgsDriv', None, None, 'Road', 4, False, False, (128, 0, 192)),
+    Label('LaneMkgsNonDriv', None, None, 'Road', 4, False, False, (192, 0, 64)),
 
-    Label('Sidewalk', None, None, 'Pavement', 5, None, None, (0, 0, 192)),
-    Label('ParkingBlock', None, None, 'Pavement', 5, None, None, (64, 192, 128)),
-    Label('RoadShoulder', None, None, 'Pavement', 5, None, None, (128, 128, 192)),
+    Label('Sidewalk', None, None, 'Pavement', 5, False, False, (0, 0, 192)),
+    Label('ParkingBlock', None, None, 'Pavement', 5, False, False, (64, 192, 128)),
+    Label('RoadShoulder', None, None, 'Pavement', 5, False, False, (128, 128, 192)),
 
-    Label('Tree', None, None, 'Tree', 6, None, None, (128, 128, 0)),
-    Label('VegetationMisc', None, None, 'Tree', 6, None, None, (192, 192, 0)),
+    Label('Tree', None, None, 'Tree', 6, False, False, (128, 128, 0)),
+    Label('VegetationMisc', None, None, 'Tree', 6, False, False, (192, 192, 0)),
 
-    Label('SignSymbol', None, None, 'SignSymbol', 7, None, None, (192, 128, 128)),
-    Label('Misc_Text', None, None, 'SignSymbol', 7, None, None, (128, 128, 64)),
-    Label('TrafficLight', None, None, 'SignSymbol', 7, None, None, (0, 64, 64)),
+    Label('SignSymbol', None, None, 'SignSymbol', 7, False, False, (192, 128, 128)),
+    Label('Misc_Text', None, None, 'SignSymbol', 7, False, False, (128, 128, 64)),
+    Label('TrafficLight', None, None, 'SignSymbol', 7, False, False, (0, 64, 64)),
 
-    Label('Fence', None, None, 'Fence', 8, None, None, (64, 64, 128)),
+    Label('Fence', None, None, 'Fence', 8, False, False, (64, 64, 128)),
 
-    Label('Car', None, None, 'Car', 9, None, None, (64, 0, 128)),
-    Label('SUVPickupTruck', None, None, 'Car', 9, None, None, (64, 128, 192)),
-    Label('Train', None, None, 'Car', 9, None, None, (192, 64, 128)),
-    Label('Truck_Bus', None, None, 'Car', 9, None, None, (192, 128, 192)),
-    Label('OtherMoving', None, None, 'Car', 9, None, None, (128, 64, 64)),
+    Label('Car', None, None, 'Car', 9, False, False, (64, 0, 128)),
+    Label('SUVPickupTruck', None, None, 'Car', 9, False, False, (64, 128, 192)),
+    Label('Train', None, None, 'Car', 9, False, False, (192, 64, 128)),
+    Label('Truck_Bus', None, None, 'Car', 9, False, False, (192, 128, 192)),
+    Label('OtherMoving', None, None, 'Car', 9, False, False, (128, 64, 64)),
 
-    Label('Pedestrian', None, None, 'Pedestrian', 10, None, None, (64, 64, 0)),
-    Label('Child', None, None, 'Pedestrian', 10, None, None, (192, 128, 64)),
-    Label('CartLuggagePram', None, None, 'Pedestrian', 10, None, None, (64, 0, 192)),
-    Label('Animal', None, None, 'Pedestrian', 10, None, None, (64, 128, 64)),
+    Label('Pedestrian', None, None, 'Pedestrian', 10, False, False, (64, 64, 0)),
+    Label('Child', None, None, 'Pedestrian', 10, False, False, (192, 128, 64)),
+    Label('CartLuggagePram', None, None, 'Pedestrian', 10, False, False, (64, 0, 192)),
+    Label('Animal', None, None, 'Pedestrian', 10, False, False, (64, 128, 64)),
 
-    Label('Bicyclist', None, None, 'Bicyclist', 11, None, None, (0, 128, 192)),
-    Label('MotorcycleScooter', None, None, 'Bicyclist', 11, None, None, (192, 0, 192)),
+    Label('Bicyclist', None, None, 'Bicyclist', 11, False, False, (0, 128, 192)),
+    Label('MotorcycleScooter', None, None, 'Bicyclist', 11, False, False, (192, 0, 192)),
 ]
 
 cityscape_labels = [
-    # name, id, trainId, category, catId, hasInstances, ignoreInEval, color
+    # name, id, trainId, category, catId, hasInstances, ignore, color
     Label('unlabeled', 0, 255, 'void', 0, False, True, (0, 0, 0)),
-    # Label('ego vehicle', 1, 255, 'void', 0, False, True, (0, 0, 0)),
-    # Label('rectification border', 2, 255, 'void', 0, False, True, (0, 0, 0)),
-    # Label('out of roi', 3, 255, 'void', 0, False, True, (0, 0, 0)),
-    # Label('static', 4, 255, 'void', 0, False, True, (0, 0, 0)),
+    Label('ego vehicle', 1, 255, 'void', 0, False, True, (0, 0, 0)),
+    Label('rectification border', 2, 255, 'void', 0, False, True, (0, 0, 0)),
+    Label('out of roi', 3, 255, 'void', 0, False, True, (0, 0, 0)),
+    Label('static', 4, 255, 'void', 0, False, True, (0, 0, 0)),
     Label('dynamic', 5, 255, 'void', 0, False, True, (111, 74, 0)),
     Label('ground', 6, 255, 'void', 0, False, True, (81, 0, 81)),
 
@@ -118,7 +117,7 @@ cityscape_labels = [
     Label('tunnel', 16, 255, 'construction', 2, False, True, (150, 120, 90)),
 
     Label('pole', 17, 5, 'object', 3, False, False, (153, 153, 153)),
-    # Label('polegroup', 18, 255, 'object', 3, False, True, (153, 153, 153)),
+    Label('polegroup', 18, 255, 'object', 3, False, True, (153, 153, 153)),
     Label('traffic light', 19, 6, 'object', 3, False, False, (250, 170, 30)),
     Label('traffic sign', 20, 7, 'object', 3, False, False, (220, 220, 0)),
 
@@ -138,12 +137,21 @@ cityscape_labels = [
     Label('train', 31, 16, 'vehicle', 7, True, False, (0, 80, 100)),
     Label('motorcycle', 32, 17, 'vehicle', 7, True, False, (0, 0, 230)),
     Label('bicycle', 33, 18, 'vehicle', 7, True, False, (119, 11, 32)),
-    # Label('license plate', -1, -1, 'vehicle', 7, False, True, (0, 0, 142)),
+    Label('license plate', -1, -1, 'vehicle', 7, False, True, (0, 0, 142)),
 ]
 
 
-def dataset(name='camvid', dataset_root=None, img_size=None, crop_size=None, use_category=True):
-    if name in ['camvid', 'CamVid']:
+def dataset(name='camvid', dataset_root=None, img_size=None, crop_size=None, cache=True):
+    if name in ['camvid', 'CamVid', 'camvid-11']:
+        if dataset_root is None:
+            dataset_root = 'datasets/camvid'
+        if img_size is None:
+            img_size = 720 // 2, 960 // 2
+        if crop_size is None:
+            crop_size = 720 // 2, 960 // 2
+        dataset_paths = camvid_paths(dataset_root)
+        train_img_q, train_label_q, val_img_q, val_label_q, test_img_q, test_label_q = dataset_paths
+    elif name in ['camvid-31']:
         if dataset_root is None:
             dataset_root = 'datasets/camvid'
         if img_size is None:
@@ -165,20 +173,30 @@ def dataset(name='camvid', dataset_root=None, img_size=None, crop_size=None, use
     else:
         raise ValueError('%s is not allowded.' % name)
 
-    cols = colors(name, use_category=use_category)
+    cols = colors(name)
     dataset_train = tf.data.Dataset.zip(
         (images_from_paths(train_img_q, img_size), labels_from_paths(train_label_q, cols, img_size)))
+    dataset_train = dataset_train.cache() if cache else dataset_train
     dataset_train = dataset_train.map(lambda x, y: augment(x, y, crop_size))
     dataset_val = tf.data.Dataset.zip(
         (images_from_paths(val_img_q, img_size), labels_from_paths(val_label_q, cols, img_size)))
+    dataset_val = dataset_val.cache() if cache else dataset_val
     dataset_test = tf.data.Dataset.zip(
         (images_from_paths(test_img_q, img_size), labels_from_paths(test_label_q, cols, img_size)))
 
     return dataset_train, dataset_val, dataset_test
 
 
-def dataset_seq(name='camvid', dataset_root=None, seq_root=None, img_size=None, use_category=True, offset=(25, 0)):
-    if name in ['camvid', 'CamVid']:
+def dataset_seq(name='camvid', dataset_root=None, seq_root=None, img_size=None, offset=(25, 0)):
+    if name in ['camvid', 'CamVid', 'camvid-11']:
+        if dataset_root is None:
+            dataset_root = 'datasets/camvid'
+        if seq_root is None:
+            seq_root = 'F:/research/dataset/camvid/seq'
+        if img_size is None:
+            img_size = 720 // 2, 960 // 2
+        img_path, label_path = camvid_seq_paths(dataset_root, seq_root)
+    elif name in ['camvid-31']:
         if dataset_root is None:
             dataset_root = 'datasets/camvid'
         if seq_root is None:
@@ -190,13 +208,14 @@ def dataset_seq(name='camvid', dataset_root=None, seq_root=None, img_size=None, 
         if dataset_root is None:
             dataset_root = 'datasets/cityscape'
         if seq_root is None:
-            seq_root = "F:/research/dataset/cityscape"
+            seq_root = 'F:/research/dataset/cityscape'
         if img_size is None:
             img_size = 1024 // 2, 2048 // 2
         _, _, img_path, label_path, _, _ = cityscape_seq_paths(dataset_root, seq_root)
     else:
         raise ValueError('%s is not allowded.' % name)
-    cols = colors(name, use_category=use_category)
+
+    cols = colors(name)
     dataset_img = tf.data.Dataset.from_tensor_slices(img_path)
     dataset_label = tf.data.Dataset.from_tensor_slices([str(path) for path in label_path])
     dataset = tf.data.Dataset.zip((dataset_img, dataset_label))
@@ -268,22 +287,30 @@ def crop_random(images, labels, crop_height, crop_width):
     return images, labels
 
 
-def colors(name='camvid', use_category=True):
-    if name in ['camvid', 'CamVid']:
+def colors(name='camvid'):
+    if name in ['camvid', 'CamVid', 'camvid-11']:
         label_infos = camvid_labels
+        use_category = True
+    elif name in ['camvid-31']:
+        label_infos = camvid_labels
+        use_category = False
     elif name in ['cityscape', 'CityScape']:
         label_infos = cityscape_labels
+        use_category = False
     else:
-        raise ValueError('%s is not allowded.' % dataset_name)
-    cols = colors_from_labels(label_infos, use_category)
-    return cols
+        raise ValueError('%s is not allowded.' % name)
 
-
-def colors_from_labels(labels, use_category=True):
     if use_category:
-        color_dict = {label.color: label.categoryId for label in labels if label.categoryId is not None}
+        label_infos = [label for label in label_infos if label.categoryId is not None and not label.ignore]
+        index_map = {cat_id: i for i, cat_id in enumerate(set([label.categoryId for label in label_infos]))}
+        color_dict = {label.color: index_map[label.categoryId]
+                      for label in label_infos
+                      if label.categoryId is not None and not label.ignore}
     else:
-        color_dict = {label.color: i for i, label in enumerate(labels)}
+        label_infos = [label for label in label_infos if not label.ignore]
+        color_dict = {label.color: i
+                      for i, label in enumerate(label_infos)}
+
     return color_dict
 
 
@@ -429,6 +456,33 @@ def median_freq_weights(dataset, num_classes, batch_size=3):
         count = count + tf.math.bincount(ys, minlength=num_classes)
     count = tf.cast(count, tf.float32)
     freq = tf.math.divide_no_nan(count, tf.reduce_sum(count))
-    weight = tf.math.divide_no_nan(np.median(freq), freq)
+    weights = tf.math.divide_no_nan(np.median(freq), freq)
 
-    return weight
+    return weights
+
+
+def memorized_median_freq_weights(name='camvid'):
+    if name in ['camvid', 'CamVid', 'camvid-11']:
+        weights = tf.constant([
+            0.30734012, 0.19833793, 4.7175865,  0.16562003, 0.6806351,  0.42397258,
+            4.2133756,  3.256359,   1.,         6.7325764,  9.058633,
+        ])
+    elif name in ['camvid-31']:
+        weights = tf.constant([
+            0.027896924, 11.773657, 0.019115845, 0.3273610, 0.0000000, 10.607987,
+            0.42964065, 128.60786, 0.016009688, 0.24783362, 44.399693, 0.06718957,
+            1.2284949, 2.0446982, 0.041175604, 0.58860964, 3.7385745, 0.6753312,
+            1.1540297, 0.29557616, 0.13028075, 0.7452813, 0.000000, 1.,
+            1.0005174, 0.66517824, 15.874812, 16.524097, 105.224625, 0.82981503,
+            90.09858,
+        ])
+    elif name in ['cityscape', 'CityScape']:
+        weights = tf.constant([
+            0.01551816, 0.15263364, 0.03239392, 1.22770460, 1.,
+            0.55514103, 3.32565640, 1.24312930, 0.03981314, 0.717382,
+            0.13148400, 0.50502354, 4.09746650, 0.10598614, 2.2939076,
+            2.50259420, 3.08471730, 6.45164600, 1.70384900,
+        ])
+    else:
+        raise ValueError('%s is not allowded.' % name)
+    return weights
