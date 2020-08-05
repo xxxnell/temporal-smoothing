@@ -64,6 +64,12 @@ class UNet(Model):
 
         self.fc = layers.Conv2D(self.num_classes, kernel_size=[1, 1], padding="same")
 
+
+    def set_num_classes(self, num_classes):
+        self.num_classes = num_classes
+        self.fc = layers.Conv2D(self.num_classes, kernel_size=[1, 1], padding="same")
+
+
     def call(self, x, training=False):
         # Encoding
 

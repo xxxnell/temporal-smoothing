@@ -1,7 +1,10 @@
 import tensorflow as tf
 
 
-def train_step(optimizer, model, xs, ys, num_classes, class_weights, temp=1.0):
+def train_step(optimizer, model, xs, ys, num_classes, class_weights=None, temp=1.0):
+    if class_weights is None:
+        class_weights = tf.ones([num_classes]) / num_classes
+
     with tf.GradientTape() as tape:
         logits = model(xs, training=True)
 

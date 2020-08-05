@@ -3,7 +3,7 @@ import re
 from collections import namedtuple
 import tensorflow as tf
 import numpy as np
-import semantic_segmentation.ops.imageops as imageops
+import ops.imageops as imageops
 
 Label = namedtuple('Label', [
     # The identifier of this label, e.g. 'car', 'person', ... .
@@ -219,19 +219,20 @@ def dataset_seq(name='camvid', dataset_root=None, seq_root=None, img_size=None, 
     dataset_img = tf.data.Dataset.from_tensor_slices(img_path)
     dataset_label = tf.data.Dataset.from_tensor_slices([str(path) for path in label_path])
     dataset = tf.data.Dataset.zip((dataset_img, dataset_label))
-    wsize = offset[0] + offset[1]
+    wsize = offset[0] + offset[1] + 1
     dataset = dataset.window(wsize, shift=1).flat_map(
         lambda xs, ys: tf.data.Dataset.zip((xs.batch(wsize), ys.batch(wsize))))
     dataset = dataset.filter(lambda imgs, labels: len(labels) >= wsize)
-    dataset = dataset.filter(lambda imgs, labels: tf.math.not_equal(labels[offset[0] - 1], str(None)))
-    dataset = dataset.flat_map(lambda imgs, labels: read_seq(imgs, labels, img_size, cols, wsize))
+    dataset = dataset.filter(lambda imgs, labels: tf.math.not_equal(labels[offset[0]], str(None)))
+    dataset = dataset.flat_map(lambda imgs, labels: read_seq(imgs, labels, img_size, cols, offset))
 
     return dataset
 
 
-def read_seq(img_paths, label_paths, img_size, colors, wsize):
+def read_seq(img_paths, label_paths, img_size, colors, offset):
+    wsize = offset[0] + offset[1] + 1
     images = images_from_paths(img_paths, img_size)
-    labels = labels_from_paths(label_paths, colors, img_size)
+    labels = labels_from_paths(label_paths[offset[0]:], colors, img_size)
     dataset = tf.data.Dataset.zip((images.batch(wsize), labels))
     return dataset
 

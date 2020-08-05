@@ -1,23 +1,26 @@
-import io
 import time
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import ops.imageops as imageops
 from vqbnn.vqbnn import VQBNN
 from vqbnn.och import OCH
 
 
 def test(predict, dataset, num_classes,
-         batch_size=3, cutoffs=(0.0, 0.9), bins=np.linspace(0.0, 1.0, 11), verbose=True):
+         batch_size=3, cutoffs=(0.0, 0.9), bins=np.linspace(0.0, 1.0, 11), verbose=True, period=10):
     predict_times = []
     nll_metric = tf.keras.metrics.SparseCategoricalCrossentropy(name='nll')
     cm_shape = [num_classes, num_classes]
     cms = [[np.zeros(cm_shape), np.zeros(cm_shape)] for _ in range(len(cutoffs))]
-    cms_bin = [np.zeros(cm_shape) for _ in range(len(bins) - 1)]
-    confs_bin = [tf.keras.metrics.Mean() for _ in range(len(bins) - 1)]
+    ious, accs, uncs, covs, eces = [], [], [], [], []
 
-    dataset = dataset.batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE)
-    for xs, ys in dataset:
+    cms_bin = [np.zeros(cm_shape) for _ in range(len(bins) - 1)]
+    confs_metric_bin = [tf.keras.metrics.Mean() for _ in range(len(bins) - 1)]
+    count_bin, accs_bin, confs_bin, metrics_str = [], [], [], []
+
+    dataset = dataset.batch(batch_size).enumerate().prefetch(tf.data.experimental.AUTOTUNE)
+    for step, (xs, ys) in dataset:
         batch_time = time.time()
         ys_pred = predict(xs)
         predict_times.append(time.time() - batch_time)
@@ -36,34 +39,37 @@ def test(predict, dataset, num_classes,
             cms_bin[i] = cms_bin[i] + cm(ys, ys_pred, num_classes, filter_min=start, filter_max=end)
             confidence = tf.math.reduce_max(ys_pred, axis=-1)
             condition = tf.logical_and(confidence >= start, confidence < end)
-            confs_bin[i](tf.boolean_mask(confidence, condition))
+            confs_metric_bin[i](tf.boolean_mask(confidence, condition))
 
-    ious = [miou(cm_certain) for cm_certain, cm_uncertain in cms]
-    accs = [gacc(cm_certain) for cm_certain, cm_uncertain in cms]
-    uncs = [unconfidence(cm_certain, cm_uncertain) for cm_certain, cm_uncertain in cms]
-    covs = [coverage(cm_certain, cm_uncertain) for cm_certain, cm_uncertain in cms]
-    count_bin = [np.sum(cm_bin) for cm_bin in cms_bin]
-    accs_bin = [gacc(cm_bin) for cm_bin in cms_bin]
-    confs_bin = [metric.result() for metric in confs_bin]
-    eces = ece(count_bin, accs_bin, confs_bin)
+        ious = [miou(cm_certain) for cm_certain, cm_uncertain in cms]
+        accs = [gacc(cm_certain) for cm_certain, cm_uncertain in cms]
+        uncs = [unconfidence(cm_certain, cm_uncertain) for cm_certain, cm_uncertain in cms]
+        covs = [coverage(cm_certain, cm_uncertain) for cm_certain, cm_uncertain in cms]
+        count_bin = [np.sum(cm_bin) for cm_bin in cms_bin]
+        accs_bin = [gacc(cm_bin) for cm_bin in cms_bin]
+        confs_bin = [metric.result() for metric in confs_metric_bin]
+        eces = ece(count_bin, accs_bin, confs_bin)
 
-    metrics_str = [
-        "Time: %.3f ± %.3f ms" % (np.mean(predict_times) * 1e3, np.std(predict_times) * 1e3),
-        "NLL: %.4f" % nll_metric.result(),
-        "Cutoffs: " + ", ".join(["%.1f %%" % (cutoff * 100) for cutoff in cutoffs]),
-        "IoUs: " + ", ".join(["%.3f %%" % (iou * 100) for iou in ious]),
-        "Accs: " + ", ".join(["%.3f %%" % (acc * 100) for acc in accs]),
-        "Uncs: " + ", ".join(["%.3f %%" % (unc * 100) for unc in uncs]),
-        "Covs: " + ", ".join(["%.3f %%" % (cov * 100) for cov in covs]),
-        "ECE: " + "%.3f %%" % (eces * 100),
-    ]
+        metrics_str = [
+            "Time: %.3f ± %.3f ms" % (np.mean(predict_times) * 1e3, np.std(predict_times) * 1e3),
+            "NLL: %.4f" % nll_metric.result(),
+            "Cutoffs: " + ", ".join(["%.1f %%" % (cutoff * 100) for cutoff in cutoffs]),
+            "IoUs: " + ", ".join(["%.3f %%" % (iou * 100) for iou in ious]),
+            "Accs: " + ", ".join(["%.3f %%" % (acc * 100) for acc in accs]),
+            "Uncs: " + ", ".join(["%.3f %%" % (unc * 100) for unc in uncs]),
+            "Covs: " + ", ".join(["%.3f %%" % (cov * 100) for cov in covs]),
+            "ECE: " + "%.3f %%" % (eces * 100),
+        ]
+        if verbose and int(step + 1) % period is 0:
+            print('%d Steps, %s' % (int(step + 1), ', '.join(metrics_str)))
+
     print(", ".join(metrics_str))
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     confidence_histogram(axes[0], count_bin)
     reliability_diagram(axes[1], accs_bin)
     fig.tight_layout()
-    calibration_image = plot_to_image(fig)
+    calibration_image = imageops.plot_to_image(fig)
     if not verbose:
         plt.close(fig)
 
@@ -71,25 +77,24 @@ def test(predict, dataset, num_classes,
            count_bin, accs_bin, confs_bin, eces, calibration_image
 
 
-def test_vanilla(model, dataset, num_classes, batch_size=3, cutoffs=(0.0, 0.9), verbose=True):
+def test_vanilla(model, dataset, num_classes, batch_size=3, cutoffs=(0.0, 0.9), verbose=True, period=10):
     return test(lambda xs: predict_vanilla(model, xs),
-                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose)
+                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose, period=period)
 
 
-def test_sampling(model, n_ff, dataset, num_classes, batch_size=3, cutoffs=(0.0, 0.9), verbose=True):
+def test_sampling(model, n_ff, dataset, num_classes, batch_size=3, cutoffs=(0.0, 0.9), verbose=True, period=10):
     return test(lambda xs: predict_sampling(model, xs, n_ff),
-                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose)
+                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose, period=period)
 
 
-def test_temporal_smoothing(model, l, dataset, num_classes, batch_size=3, cutoffs=(0.0, 0.9), verbose=True):
+def test_temporal_smoothing(model, l, dataset, num_classes, batch_size=3, cutoffs=(0.0, 0.9), verbose=True, period=10):
     return test(lambda xs: predict_temporal_smoothing(model, xs, l),
-                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose)
+                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose, period=period)
 
 
-def test_vq(model, och_x_params, och_y_params,
-            dataset, num_classes, batch_size=1, cutoffs=(0.0, 0.9), verbose=True):
-    return test(lambda xs: predict_vq(model, xs, och_x_params, och_y_params),
-                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose)
+def test_vq(model, dataset, num_classes, batch_size=1, cutoffs=(0.0, 0.9), verbose=True, period=10):
+    return test(lambda xs: predict_vq(model, xs),
+                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose, period=period)
 
 
 def predict_vanilla(model, xs):
@@ -109,26 +114,23 @@ def predict_temporal_smoothing(model, xs, l):
     weight = tf.math.exp(weight)
     weight = weight / tf.reduce_sum(weight)
 
-    xs = tf.transpose(xs, perm=[1, 0, 2, 3, 4])
+    xs = tf.einsum("ij...->ji...", xs)  # xs = tf.transpose(xs, perm=[1, 0, ...])
     ys_pred = tf.stack([tf.nn.softmax(model(x_batch), axis=-1) for x_batch in xs])
     ys_pred = tf.tensordot(weight, ys_pred, axes=[0, 0])
     return ys_pred
 
 
-def predict_vq(model, xs, och_x_params, och_y_params):
-    och_x1_params = {'k': 5, 'l': 5.0, 's': 1.0}
-    img_size = xs.shape[2:]
-    x_dims, y_dims = [img_size[0] * img_size[1] * 3, 1], [img_size[0] * img_size[1] * 1]
-    x_1s = [[tf.zeros(dim) for dim in x_dims[1:]]]
-    och_x_1 = OCH(**och_x1_params, dims=x_dims[1:], hash_no=1, cs=x_1s)
-    och_x = OCH(**och_x_params, dims=x_dims, hash_no=1)
-    och_y = OCH(**och_y_params, dims=y_dims, hash_no=1, ann='argmax')
-    vqnn = VQBNN(lambda x: model(tf.reshape(x[0], [1] + img_size)), och_x_1, och_x, och_y)
+def predict_vq(vqbnn, xs):
+    # img_size = xs.shape[2:]
+    # x_dims, y_dims = [img_size[0] * img_size[1] * img_size[2]], [img_size[0] * img_size[1] * 1]
+    # och_x = OCH(**och_x_params, dims=x_dims, hash_no=1)
+    # och_y = OCH(**och_y_params, dims=y_dims, hash_no=1, ann='argmax')
+    # vqbnn = VQBNN(lambda x: model(tf.reshape(x, [1] + img_size)), och_x=och_x, och_y=och_y, posterior=None)
 
     for x in xs[0]:
-        vqnn.update(x)
+        vqbnn.update(x)
 
-    ys_pred = tf.reduce_sum([tf.nn.softmax(c, axis=-1) * w for c, w in vqnn.och_y.cws()], axis=0)
+    ys_pred = tf.reduce_sum([tf.nn.softmax(c, axis=-1) * w for c, w in vqbnn.och_y.cws()], axis=0)
     return ys_pred
 
 
@@ -259,19 +261,3 @@ def reliability_diagram(ax, accs_bins, colors='tab:red', mode=0):
     ax.set_xlabel('Confidence (%)')
     ax.set_ylabel('Accuracy (%)')
 
-
-def plot_to_image(figure):
-    """
-    Converts the matplotlib plot specified by 'figure' to a PNG image and
-    returns it. The supplied figure is closed and inaccessible after this call.
-    """
-    # Save the plot to a PNG in memory
-    buf = io.BytesIO()
-    figure.savefig(buf, format='png')
-    buf.seek(0)
-
-    # Convert PNG buffer to TF image
-    image = tf.image.decode_png(buf.getvalue(), channels=4)
-    image = tf.expand_dims(image, axis=0)
-
-    return image
