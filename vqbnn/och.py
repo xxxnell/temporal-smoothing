@@ -5,12 +5,12 @@ from vqbnn.ann_argmax import ANNArgMax
 import tensorflow as tf
 
 
-class OCH():
+class OCH:
     """
     Online Codevector Histogram (OCH) to estimate the probability of non-stationary data stream as well as dataset.
     """
 
-    def __init__(self, k, l, s, dims, hash_no, cns=None, cs=None, w=None, cache_no=None, ann="all"):
+    def __init__(self, k, l, s, dims, hash_no, cns=None, cs=None, w=None, cache_no=None, ann='all'):
         """
         :param k: hyperparameter K
         :param l: hyperparameter λ
@@ -23,20 +23,15 @@ class OCH():
         if cache_no is None:
             cache_no = [10] * len(dims)
 
-        self.k = k
-        self.l = l
-        self.s = s
+        self.k, self.l, self.s = k, l, s
         self.dims = dims
         self.cns = []
-        if ann == "all":
+        if ann == 'all':
             self.nns = ANN.every(dims, hash_no, w=w, cache_no=cache_no)
-        elif ann == "argmax":
+        elif ann == 'argmax':
             self.nns = ANNArgMax.every(dims, hash_no, w=w, cache_no=cache_no)
         else:
             raise ValueError
-
-        self.phi = self._logit(self.s)
-        self.pi_avg = 1 / self.k
 
         for c, n in cns:
             self.add(c, n)
@@ -62,38 +57,32 @@ class OCH():
         """
         :param x: input vector
         :param n: count of input vector
-        :return: new codevector if exists, difference of the count (δn)
+        :return: new codevector if exists, difference of the count (δn), outdated codevectors
         """
-        c_new, n_diff, c_olds = None, 0.0, []
+        c_new, n_diff, c_olds = None, n, []
 
+        # Step A. Increase the count
         c = self.nns[0].search(x)
+        m = next(iter([_n for _c, _n in self.cns if _c is c]), 0.0) + n
+        self.cns = [(_c, m) if _c is c else (_c, _n) for _c, _n in self.cns]
+
+        # Step B. Memorize a new codevector
+        n_tot = self.n_tot()
+        gamma = math.exp(-1 * self.l / n_tot) if n_tot > 0.0 else 0.0
         exists = len([_c for _c, _ in self.cns if c is _c]) > 0
-        if c is None or not exists:
-            c_new, n_diff = x, n
-            self.add(x, n)
-        else:
-            # Step A. Increase the count
-            n_diff = n
-            m = next(iter([_n for _c, _n in self.cns if _c is c])) + n
-            self.cns = [(_c, m) if _c is c else (_c, _n) for _c, _n in self.cns]
+        if self._bernoulli(self.s) is 1 or not exists:
+            c_new, n_diff = x, (1 - gamma) * m
+            self.cns = [(_c, gamma * m) if _c is c else (_c, _n) for _c, _n in self.cns]
+            self.add(x, (1 - gamma) * m)
 
-            # Step B. Add a new codeword vector
-            n_tot = self.n_tot()
-            gamma = math.exp(-1 * self.l / n_tot) if n_tot > 0.0 else 0.0
-            if self._bernoulli(self._prob_add(m / n_tot if n_tot > 0.0 else 1.0)) is 1:
-                c_new, n_diff = x, (1 - gamma) * m
-                self.cns = [(_c, gamma * m) if _c is c else (_c, _n) for _c, _n in self.cns]
-                self.add(x, (1 - gamma) * m)
-            self.cns = [(_c, _n * gamma) for _c, _n in self.cns]
+        # Step C. Forget old codevectors
+        self.cns = [(_c, _n * gamma) for _c, _n in self.cns]
 
-            # Step C. Remove old codeword vectors
-            n_tot = self.n_tot()
-            for _c, _n in self.cns:
-                if self._bernoulli(self._prob_remove(_n / n_tot if n_tot > 0.0 else 1.0)) is 1:
-                    self.remove(_c)
-                    c_olds.append(_c)
-                    if c_new is None and _c is c or _c is c_new:
-                        c_new, n_diff = None, 0.0
+        # Step D. Remove old codevectors
+        self.cns.sort(key=lambda x: x[1], reverse=True)
+        self.cns, c_olds = self.cns[:self.k], [_c for _c, _n in self.cns[self.k:]]
+        for c_old in c_olds:
+            self.remove(c_old)
 
         return c_new, n_diff, c_olds
 
@@ -105,33 +94,33 @@ class OCH():
     def _categorical(ps):
         return next(iter(np.where(np.random.multinomial(1, ps) == 1)[0]), None)
 
-    @staticmethod
-    def _sigmoid(x):
-        return 1 / (1 + np.exp(-x))
-
-    @staticmethod
-    def _logit(x):
-        if x >= 1:
-            return math.inf
-        elif x <= 0:
-            return -math.inf
-        else:
-            return np.log(x / (1 - x))
-
-    def _prob_add(self, pi):
-        return self._sigmoid(pi - self.pi_avg + self.phi)
-
-    def _prob_remove(self, pi):
-        return self._sigmoid(self.pi_avg - pi + self.phi) * self.pi_avg
+    # @staticmethod
+    # def _sigmoid(x):
+    #     return 1 / (1 + np.exp(-x))
+    #
+    # @staticmethod
+    # def _logit(x):
+    #     if x >= 1:
+    #         return math.inf
+    #     elif x <= 0:
+    #         return -math.inf
+    #     else:
+    #         return np.log(x / (1 - x))
+    #
+    # def _prob_add(self, pi):
+    #     return self._sigmoid(pi - self.pi_avg + self.phi)
+    #
+    # def _prob_remove(self, pi):
+    #     return self._sigmoid(self.pi_avg - pi + self.phi) * self.pi_avg
 
     def n_tot(self):
         return sum([n for _, n in self.cns])
 
-    def is_empty(self):
-        return len(self.cns) is 0 and self.nns.is_empty()
-
-    def len(self):
-        return len(self.cns)
+    # def is_empty(self):
+    #     return len(self.cns) is 0 and self.nns.is_empty()
+    #
+    # def len(self):
+    #     return len(self.cns)
 
     def cws(self):
         n_tot = self.n_tot()
@@ -152,24 +141,25 @@ class OCH():
             cs = [c for c, _ in self.cns if c[i] is c_i]
             return next(iter(cs), None)
 
-    def moments(self):
-        axes = [0]
-        if len(self.cws()) > 0:
-            cs, ws = zip(*self.cws())
+    # def moments(self):
+    #     axes = [0]
+    #     if len(self.cws()) > 0:
+    #         cs, ws = zip(*self.cws())
+    #
+    #         mean, variance = [], []
+    #         for c_is in zip(*cs):
+    #             ws_extend = [tf.ones(tf.shape(c_i)) * w for w, c_i in zip(ws, c_is)]
+    #             mean_i, variance_i = tf.nn.weighted_moments(tf.stack(c_is), axes, tf.stack(ws_extend))
+    #             mean.append(mean_i)
+    #             variance.append(variance_i)
+    #     else:
+    #         mean, variance = None, None
+    #     return mean, variance
+    #
+    # def expected(self):
+    #     return self.moments()[0]
+    #
+    # def var(self):
+    #     return self.moments()[1]
 
-            mean, variance = [], []
-            for c_is in zip(*cs):
-                ws_extend = [tf.ones(tf.shape(c_i)) * w for w, c_i in zip(ws, c_is)]
-                mean_i, variance_i = tf.nn.weighted_moments(tf.stack(c_is), axes, tf.stack(ws_extend))
-                mean.append(mean_i)
-                variance.append(variance_i)
-        else:
-            mean, variance = None, None
-        return mean, variance
-
-    def expected(self):
-        return self.moments()[0]
-
-    def var(self):
-        return self.moments()[1]
 
