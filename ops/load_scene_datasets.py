@@ -141,7 +141,7 @@ cityscape_labels = [
 ]
 
 
-def dataset(name='camvid', dataset_root=None, img_size=None, crop_size=None, cache=True):
+def dataset(name='camvid', dataset_root=None, img_size=None, crop_size=None, flip=False, cache=True):
     if name in ['camvid', 'CamVid', 'camvid-11']:
         if dataset_root is None:
             dataset_root = 'datasets/camvid'
@@ -177,7 +177,7 @@ def dataset(name='camvid', dataset_root=None, img_size=None, crop_size=None, cac
     dataset_train = tf.data.Dataset.zip(
         (images_from_paths(train_img_q, img_size), labels_from_paths(train_label_q, cols, img_size)))
     dataset_train = dataset_train.cache() if cache else dataset_train
-    dataset_train = dataset_train.map(lambda x, y: augment(x, y, crop_size))
+    dataset_train = dataset_train.map(lambda x, y: augment(x, y, crop_size, flip))
     dataset_val = tf.data.Dataset.zip(
         (images_from_paths(val_img_q, img_size), labels_from_paths(val_label_q, cols, img_size)))
     dataset_val = dataset_val.cache() if cache else dataset_val
@@ -270,18 +270,20 @@ def read_label(label_path, colors, img_size=None):
     return label
 
 
-def augment(images, labels, crop_size=None):
+def augment(images, labels, crop_size=None, flip=False):
     if crop_size is not None:
-        images, labels = crop_random(images, labels, crop_size[0], crop_size[1])
+        crop_size = list(crop_size)
+        images, labels = concat_op(lambda concat: tf.image.random_crop(concat, crop_size + [4]), images, labels)
+    if flip:
+        images, labels = concat_op(lambda concat: tf.image.random_flip_left_right(concat), images, labels)
     return images, labels
 
 
-def crop_random(images, labels, crop_height, crop_width):
+def concat_op(op, images, labels):
     labels = tf.cast(tf.expand_dims(labels, axis=-1), tf.float32)
     concat = tf.concat([images, labels], axis=-1)
-    img_channel_no, channel_no = images.shape[-1], concat.shape[-1]
-    concat = tf.image.random_crop(concat, [crop_height, crop_width, channel_no])
-    images, labels = tf.split(concat, [img_channel_no, -1], axis=-1)
+    concat = op(concat)
+    images, labels = tf.split(concat, [images.shape[-1], -1], axis=-1)
 
     labels = tf.cast(labels, tf.int32)
     labels = tf.squeeze(labels, axis=-1)
@@ -479,10 +481,10 @@ def memorized_median_freq_weights(name='camvid'):
         ])
     elif name in ['cityscape', 'CityScape']:
         weights = tf.constant([
-            0.01551816, 0.15263364, 0.03239392, 1.22770460, 1.,
-            0.55514103, 3.32565640, 1.24312930, 0.03981314, 0.717382,
-            0.13148400, 0.50502354, 4.09746650, 0.10598614, 2.2939076,
-            2.50259420, 3.08471730, 6.45164600, 1.70384900,
+            0.02378161, 0.14417477, 0.03839535, 1.338447, 1.,
+            0.70898040, 4.21602300, 1.5896031, 0.05500022, 0.7577104,
+            0.21756290, 0.71932510, 6.4886045, 0.12540095, 3.2785587,
+            3.72766760, 3.76464400, 8.8897560, 2.1188986
         ])
     else:
         raise ValueError('%s is not allowded.' % name)

@@ -8,7 +8,7 @@ from vqbnn.och import OCH
 
 
 def test(predict, dataset, num_classes,
-         batch_size=3, cutoffs=(0.0, 0.9), bins=np.linspace(0.0, 1.0, 11), verbose=True, period=10):
+         batch_size=3, ys_mask=None, cutoffs=(0.0, 0.9), bins=np.linspace(0.0, 1.0, 11), verbose=True, period=10):
     predict_times = []
     nll_metric = tf.keras.metrics.SparseCategoricalCrossentropy(name='nll')
     cm_shape = [num_classes, num_classes]
@@ -25,7 +25,7 @@ def test(predict, dataset, num_classes,
         ys_pred = predict(xs)
         predict_times.append(time.time() - batch_time)
 
-        mask = ys >= 0
+        mask = ys_mask(xs, ys)
         ys = tf.boolean_mask(ys, mask)
         ys_pred = tf.boolean_mask(ys_pred, mask)
 
@@ -77,28 +77,65 @@ def test(predict, dataset, num_classes,
            count_bin, accs_bin, confs_bin, eces, calibration_image
 
 
-def test_vanilla(model, dataset, num_classes, batch_size=3, cutoffs=(0.0, 0.9), verbose=True, period=10):
-    return test(lambda xs: predict_vanilla(model, xs),
-                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose, period=period)
+def ys_mask(xs, ys, edge):
+    # Void mask
+    mask = ys >= 0
+
+    # Edge mask
+    if edge is not None:
+        xs_edge = tf.image.sobel_edges(tf.image.rgb_to_grayscale(xs))
+        xs_edge = tf.squeeze(xs_edge, axis=3)
+        xs_edge = tf.sqrt(tf.reduce_sum(tf.math.square(xs_edge), axis=-1))
+        mask = tf.math.logical_and(mask, xs_edge > edge)
+
+    return mask
 
 
-def test_sampling(model, n_ff, dataset, num_classes, batch_size=3, cutoffs=(0.0, 0.9), verbose=True, period=10):
-    return test(lambda xs: predict_sampling(model, xs, n_ff),
-                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose, period=period)
+def ys_mask_seq(xs, ys, edge):
+    # Void mask
+    mask = ys >= 0
+
+    # Edge mask
+    if edge is not None:
+        xs_edge = tf.image.sobel_edges(tf.image.rgb_to_grayscale(xs[:, -1, :, :, :]))
+        xs_edge = tf.squeeze(xs_edge, axis=3)
+        xs_edge = tf.sqrt(tf.reduce_sum(tf.math.square(xs_edge), axis=-1))
+        mask = tf.math.logical_and(mask, xs_edge > edge)
+
+    return mask
 
 
-def test_temporal_smoothing(model, l, dataset, num_classes, batch_size=3, cutoffs=(0.0, 0.9), verbose=True, period=10):
-    return test(lambda xs: predict_temporal_smoothing(model, xs, l),
-                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose, period=period)
+def test_vanilla(model, dataset, num_classes, batch_size=3,
+                 edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
+    return test(lambda xs: predict_vanilla(model, xs), dataset, num_classes, batch_size=batch_size,
+                ys_mask=lambda xs, ys: ys_mask(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
 
 
-def test_vq(model, dataset, num_classes, batch_size=1, cutoffs=(0.0, 0.9), verbose=True, period=10):
-    return test(lambda xs: predict_vq(model, xs),
-                dataset, num_classes, batch_size=batch_size, cutoffs=cutoffs, verbose=verbose, period=period)
+def test_temp_scaling(model, temp, dataset, num_classes, batch_size=3,
+                      edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
+    return test(lambda xs: predict_temp_scaling(model, xs, temp), dataset, num_classes, batch_size=batch_size,
+                ys_mask=lambda xs, ys: ys_mask(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
+
+
+def test_sampling(model, n_ff, dataset, num_classes, batch_size=3,
+                  edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
+    return test(lambda xs: predict_sampling(model, xs, n_ff), dataset, num_classes, batch_size=batch_size,
+                ys_mask=lambda xs, ys: ys_mask(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
+
+
+def test_temporal_smoothing(model, l, dataset, num_classes, batch_size=3,
+                            edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
+    return test(lambda xs: predict_temporal_smoothing(model, xs, l), dataset, num_classes, batch_size=batch_size,
+                ys_mask=lambda xs, ys: ys_mask_seq(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
 
 
 def predict_vanilla(model, xs):
     ys_pred = tf.nn.softmax(model(xs), axis=-1)
+    return ys_pred
+
+
+def predict_temp_scaling(model, xs, temp=1.0):
+    ys_pred = tf.nn.softmax(model(xs) / temp, axis=-1)
     return ys_pred
 
 
@@ -260,4 +297,3 @@ def reliability_diagram(ax, accs_bins, colors='tab:red', mode=0):
     ax.set_ylim(0, 100.0)
     ax.set_xlabel('Confidence (%)')
     ax.set_ylabel('Accuracy (%)')
-
