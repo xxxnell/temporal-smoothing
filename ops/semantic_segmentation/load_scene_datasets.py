@@ -3,7 +3,7 @@ import re
 from collections import namedtuple
 import tensorflow as tf
 import numpy as np
-import ops.imageops as imageops
+import ops.semantic_segmentation.imageops as imageops
 
 Label = namedtuple('Label', [
     # The identifier of this label, e.g. 'car', 'person', ... .

@@ -2,7 +2,7 @@ import time
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-import ops.imageops as imageops
+import ops.semantic_segmentation.imageops as imageops
 from vqbnn.vqbnn import VQBNN
 from vqbnn.och import OCH
 
