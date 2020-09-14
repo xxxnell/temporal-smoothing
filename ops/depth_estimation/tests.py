@@ -28,12 +28,12 @@ def test(predict, dataset,
         metrics_str = [
             "Time: %.3f ± %.3f ms" % (np.mean(predict_times) * 1e3, np.std(predict_times) * 1e3),
             "NLL: %.4f" % metrics_mean[0].result(),
-            'RMSE: %.3f' % tf.math.sqrt(metrics_mean[1].result()),
-            'Abs Rel: %.3f' % metrics_mean[2].result(),
-            'Sq Rel: %.3f' % metrics_mean[3].result(),
-            '𝛿1: %.3f' % (metrics_mean[5].result() / metrics_mean[4].result()),
-            '𝛿2: %.3f' % (metrics_mean[6].result() / metrics_mean[4].result()),
-            '𝛿3: %.3f' % (metrics_mean[7].result() / metrics_mean[4].result()),
+            'RMSE: %.4f' % tf.math.sqrt(metrics_mean[1].result()),
+            'Abs Rel: %.4f' % metrics_mean[2].result(),
+            'Sq Rel: %.4f' % metrics_mean[3].result(),
+            '𝛿1: %.4f' % (metrics_mean[5].result() / metrics_mean[4].result()),
+            '𝛿2: %.4f' % (metrics_mean[6].result() / metrics_mean[4].result()),
+            '𝛿3: %.4f' % (metrics_mean[7].result() / metrics_mean[4].result()),
         ]
         if verbose and int(step + 1) % period is 0:
             print('%d Steps, %s' % (int(step + 1), ', '.join(metrics_str)))
@@ -41,7 +41,7 @@ def test(predict, dataset,
     print(', '.join(metrics_str))
 
     n_tot = metrics_mean[4].result()
-    return metrics_mean[0].result(), metrics_mean[1].result(), \
+    return metrics_mean[0].result(), tf.math.sqrt(metrics_mean[1].result()), \
            metrics_mean[2].result(), metrics_mean[3].result(), \
            metrics_mean[5].result() / n_tot, metrics_mean[6].result() / n_tot, metrics_mean[7].result() / n_tot
 
@@ -79,18 +79,24 @@ def mde_metrics(ys, ys_pred):
 
 
 def test_vanilla(model, dataset, batch_size=3,
-                 var=0.5, edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
+                 var=0.4, edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
     return test(lambda xs: predict_vanilla(model, xs, var=var), dataset, batch_size=batch_size,
                 ys_mask=lambda xs, ys: ys_mask(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
 
 
 def test_sampling(model, n_ff, dataset, batch_size=3,
-                  var=0.5, edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
+                  var=0.4, edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
     return test(lambda xs: predict_sampling(model, xs, n_ff, var=var), dataset, batch_size=batch_size,
                 ys_mask=lambda xs, ys: ys_mask(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
 
 
-def predict_vanilla(model, xs, var=0.5):
+def test_temporal_smoothing(model, l, dataset, batch_size=3,
+                            var=0.4, edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
+    return test(lambda xs: predict_temporal_smoothing(model, xs, l, var=var), dataset, batch_size=batch_size,
+                ys_mask=lambda xs, ys: ys_mask(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
+
+
+def predict_vanilla(model, xs, var=0.4):
     ys_pred = model(xs)
     ys_pred = tf.nn.relu(ys_pred)
 
@@ -100,7 +106,7 @@ def predict_vanilla(model, xs, var=0.5):
     return ys_pred
 
 
-def predict_sampling(model, xs, n_ff, var=0.5):
+def predict_sampling(model, xs, n_ff, var=0.4):
     ys_pred = tf.stack([model(xs) for _ in range(n_ff)], axis=-1)
     ys_pred = tf.nn.relu(ys_pred)
 
@@ -108,6 +114,22 @@ def predict_sampling(model, xs, n_ff, var=0.5):
     ys_pred_var = tf.math.reduce_variance(ys_pred, axis=-1)
     ys_pred_var = ys_pred_var + tf.ones(ys_pred.shape[:3] + [1]) * var
     ys_pred = tf.concat([ys_pred_mean, ys_pred_var], axis=-1)
+    return ys_pred
+
+
+def predict_temporal_smoothing(model, xs, l, var=0.4):
+    n_ff = xs.shape[1]
+    weight = (tf.range(n_ff, dtype=tf.float32) - n_ff) * l
+    weight = tf.math.exp(weight)
+    weight = weight / tf.reduce_sum(weight)
+
+    xs = tf.einsum("ij...->ji...", xs)  # xs = tf.transpose(xs, perm=[1, 0, ...])
+    ys_pred = tf.stack([tf.nn.relu(model(x_batch)) for x_batch in xs], axis=-1)
+
+    ys_pred_mean, ys_pred_var = tf.nn.weighted_moments(ys_pred, axes=-1, frequency_weights=weight)
+    ys_pred_var = ys_pred_var + tf.ones(ys_pred.shape[:3] + [1]) * var
+    ys_pred = tf.concat([ys_pred_mean, ys_pred_var], axis=-1)
+
     return ys_pred
 
 
