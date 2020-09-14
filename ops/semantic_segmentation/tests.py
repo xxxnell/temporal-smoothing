@@ -3,8 +3,6 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import ops.semantic_segmentation.imageops as imageops
-from vqbnn.vqbnn import VQBNN
-from vqbnn.och import OCH
 
 
 def test(predict, dataset, num_classes,
@@ -154,20 +152,6 @@ def predict_temporal_smoothing(model, xs, l):
     xs = tf.einsum("ij...->ji...", xs)  # xs = tf.transpose(xs, perm=[1, 0, ...])
     ys_pred = tf.stack([tf.nn.softmax(model(x_batch), axis=-1) for x_batch in xs])
     ys_pred = tf.tensordot(weight, ys_pred, axes=[0, 0])
-    return ys_pred
-
-
-def predict_vq(vqbnn, xs):
-    # img_size = xs.shape[2:]
-    # x_dims, y_dims = [img_size[0] * img_size[1] * img_size[2]], [img_size[0] * img_size[1] * 1]
-    # och_x = OCH(**och_x_params, dims=x_dims, hash_no=1)
-    # och_y = OCH(**och_y_params, dims=y_dims, hash_no=1, ann='argmax')
-    # vqbnn = VQBNN(lambda x: model(tf.reshape(x, [1] + img_size)), och_x=och_x, och_y=och_y, posterior=None)
-
-    for x in xs[0]:
-        vqbnn.update(x)
-
-    ys_pred = tf.reduce_sum([tf.nn.softmax(c, axis=-1) * w for c, w in vqbnn.och_y.cws()], axis=0)
     return ys_pred
 
 
