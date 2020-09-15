@@ -1,4 +1,5 @@
 import time
+import random
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -127,6 +128,18 @@ def test_temporal_smoothing(model, l, dataset, num_classes, batch_size=3,
                 ys_mask=lambda xs, ys: ys_mask_seq(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
 
 
+def test_ensemble(models, dataset, num_classes, batch_size=3,
+                  edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
+    return test(lambda xs: predict_ensemble(models, xs), dataset, num_classes, batch_size=batch_size,
+                ys_mask=lambda xs, ys: ys_mask(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
+
+
+def test_ensemble_smoothing(models, l, dataset, num_classes, batch_size=3,
+                            edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
+    return test(lambda xs: predict_ensemble_smoothing(models, xs, l), dataset, num_classes, batch_size=batch_size,
+                ys_mask=lambda xs, ys: ys_mask_seq(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
+
+
 def predict_vanilla(model, xs):
     ys_pred = tf.nn.softmax(model(xs), axis=-1)
     return ys_pred
@@ -139,7 +152,7 @@ def predict_temp_scaling(model, xs, temp=1.0):
 
 def predict_sampling(model, xs, n_ff):
     ys_pred = tf.stack([tf.nn.softmax(model(xs), axis=-1) for _ in range(n_ff)])
-    ys_pred = tf.reduce_sum(ys_pred, axis=0) / n_ff
+    ys_pred = tf.math.reduce_mean(ys_pred, axis=0) / n_ff
     return ys_pred
 
 
@@ -151,6 +164,25 @@ def predict_temporal_smoothing(model, xs, l):
 
     xs = tf.einsum("ij...->ji...", xs)  # xs = tf.transpose(xs, perm=[1, 0, ...])
     ys_pred = tf.stack([tf.nn.softmax(model(x_batch), axis=-1) for x_batch in xs])
+    ys_pred = tf.tensordot(weight, ys_pred, axes=[0, 0])
+    return ys_pred
+
+
+def predict_ensemble(models, xs):
+    ys_pred = tf.stack([tf.nn.softmax(model(xs), axis=-1) for model in models])
+    ys_pred = tf.math.reduce_mean(ys_pred, axis=0)
+    return ys_pred
+
+
+def predict_ensemble_smoothing(models, xs, l):
+    n_ff = xs.shape[1]
+    weight = (tf.range(n_ff, dtype=tf.float32) - n_ff) * l
+    weight = tf.math.exp(weight)
+    weight = weight / tf.reduce_sum(weight)
+
+    xs = tf.einsum("ij...->ji...", xs)  # xs = tf.transpose(xs, perm=[1, 0, ...])
+    models = [models[random.randint(0, len(models)) - 1] for _ in range(len(xs))]
+    ys_pred = tf.stack([tf.nn.softmax(model(x_batch), axis=-1) for model, x_batch in zip(models, xs)])
     ys_pred = tf.tensordot(weight, ys_pred, axes=[0, 0])
     return ys_pred
 
