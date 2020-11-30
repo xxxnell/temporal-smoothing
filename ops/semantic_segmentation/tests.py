@@ -53,9 +53,9 @@ def test(predict, dataset, num_classes,
             "Time: %.3f ± %.3f ms" % (np.mean(predict_times) * 1e3, np.std(predict_times) * 1e3),
             "NLL: %.4f" % nll_metric.result(),
             "Cutoffs: " + ", ".join(["%.1f %%" % (cutoff * 100) for cutoff in cutoffs]),
-            "IoUs: " + ", ".join(["%.3f %%" % (iou * 100) for iou in ious]),
             "Accs: " + ", ".join(["%.3f %%" % (acc * 100) for acc in accs]),
             "Uncs: " + ", ".join(["%.3f %%" % (unc * 100) for unc in uncs]),
+            "IoUs: " + ", ".join(["%.3f %%" % (iou * 100) for iou in ious]),
             "Covs: " + ", ".join(["%.3f %%" % (cov * 100) for cov in covs]),
             "ECE: " + "%.3f %%" % (eces * 100),
         ]
@@ -122,9 +122,9 @@ def test_sampling(model, n_ff, dataset, num_classes, batch_size=3,
                 ys_mask=lambda xs, ys: ys_mask(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
 
 
-def test_temporal_smoothing(model, l, dataset, num_classes, batch_size=3,
+def test_temporal_smoothing(model, l, offset, dataset, num_classes, batch_size=3,
                             edge=None, cutoffs=(0.0, 0.9), verbose=True, period=10):
-    return test(lambda xs: predict_temporal_smoothing(model, xs, l), dataset, num_classes, batch_size=batch_size,
+    return test(lambda xs: predict_temporal_smoothing(model, xs, l, offset), dataset, num_classes, batch_size=batch_size,
                 ys_mask=lambda xs, ys: ys_mask_seq(xs, ys, edge), cutoffs=cutoffs, verbose=verbose, period=period)
 
 
@@ -152,13 +152,18 @@ def predict_temp_scaling(model, xs, temp=1.0):
 
 def predict_sampling(model, xs, n_ff):
     ys_pred = tf.stack([tf.nn.softmax(model(xs), axis=-1) for _ in range(n_ff)])
-    ys_pred = tf.math.reduce_mean(ys_pred, axis=0) / n_ff
+    ys_pred = tf.math.reduce_mean(ys_pred, axis=0)
     return ys_pred
 
 
-def predict_temporal_smoothing(model, xs, l):
-    n_ff = xs.shape[1]
-    weight = (tf.range(n_ff, dtype=tf.float32) - n_ff) * l
+def predict_temporal_smoothing(model, xs, l, offset):
+    """
+    Shape:
+     xs: [batch_size, n_ff, H, W, C]
+    """
+    weight = list(range(offset[0])) + list(range(offset[0], offset[0] - offset[1] - 1, -1))
+    weight = tf.constant(weight, dtype=tf.float32)
+    weight = weight * l
     weight = tf.math.exp(weight)
     weight = weight / tf.reduce_sum(weight)
 
@@ -201,7 +206,7 @@ def cm(ys, ys_pred, num_classes, filter_min=0.0, filter_max=1.0):
     ys = tf.reshape(tf.cast(ys, tf.int32), [-1])
     result = tf.reshape(tf.argmax(ys_pred, axis=-1, output_type=tf.int32), [-1])
     confidence = tf.reshape(tf.math.reduce_max(ys_pred, axis=-1), [-1])
-    condition = tf.logical_and(confidence >= filter_min, confidence < filter_max)
+    condition = tf.logical_and(confidence > filter_min, confidence <= filter_max)
 
     k = (ys >= 0) & (ys < num_classes) & condition
     cm = tf.math.bincount(num_classes * ys[k] + result[k], minlength=num_classes ** 2)
@@ -241,7 +246,7 @@ def gacc(cm):
     return np.divide(num, den, out=np.zeros_like(num, dtype=float), where=(den != 0))
 
 
-def accs(cm):
+def caccs(cm):
     """
     Accuracies w.r.t. classes.
     """
