@@ -229,6 +229,41 @@ def dataset_seq(name='camvid', dataset_root=None, seq_root=None, img_size=None, 
     return dataset
 
 
+def dataset_imgseq(name='camvid', dataset_root=None, seq_root=None, img_size=None, skip=0):
+    if name in ['camvid', 'CamVid', 'camvid-11']:
+        if dataset_root is None:
+            dataset_root = 'datasets/camvid'
+        if seq_root is None:
+            seq_root = 'F:/research/dataset/camvid/seq'
+        if img_size is None:
+            img_size = 720 // 2, 960 // 2
+        img_path, label_path = camvid_seq_paths(dataset_root, seq_root)
+    elif name in ['camvid-31']:
+        if dataset_root is None:
+            dataset_root = 'datasets/camvid'
+        if seq_root is None:
+            seq_root = 'F:/research/dataset/camvid/seq'
+        if img_size is None:
+            img_size = 720 // 2, 960 // 2
+        img_path, label_path = camvid_seq_paths(dataset_root, seq_root)
+    elif name in ['cityscape', 'CityScape']:
+        if dataset_root is None:
+            dataset_root = 'datasets/cityscape'
+        if seq_root is None:
+            seq_root = 'F:/research/dataset/cityscape'
+        if img_size is None:
+            img_size = 1024 // 2, 2048 // 2
+        _, _, img_path, label_path, _, _ = cityscape_seq_paths(dataset_root, seq_root)
+    else:
+        raise ValueError('%s is not allowded.' % name)
+
+    dataset = tf.data.Dataset.from_tensor_slices(img_path)
+    dataset = dataset.skip(skip)
+    dataset = dataset.flat_map(lambda img_path: images_from_paths([img_path], img_size))
+
+    return dataset
+
+
 def read_seq(img_paths, label_paths, img_size, colors, offset):
     wsize = offset[0] + offset[1] + 1
     images = images_from_paths(img_paths, img_size)
