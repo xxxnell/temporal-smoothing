@@ -1,9 +1,9 @@
 # Qualitative Results of Semantic Segmentation on Video Sequences
 
-The manuscript "Vector Quantized Bayesian Neural Network Inference for Data Streams" proposes _VQ-BNN inference_, a _temporal smoothing_ of BNN's recent predictions, in order to improve the computational performance of BNN. In addition, Appendix D proposes _VQ-DNN_, which is a temporal smoothing of deterministic NN's predictions.
-Experimental results (e.g. Table 4) show that the computational performance of VQ-BNN is almost the same as that of deterministic NN (DNN), and the predictive performance is comparable to or even superior to that of BNN. Similarly, the predictive performance of VQ-DNN is better than that of DNN.
+This repository proposes _VQ-BNN inference_, a _temporal smoothing_ of BNN's recent predictions, in order to improve the computational performance of BNN. In addition, it also proposes _VQ-DNN_, which is a temporal smoothing of deterministic NN's predictions.
+Experimental results show that the computational performance of VQ-BNN is almost the same as that of deterministic NN (DNN), and the predictive performance is comparable to or even superior to that of BNN. Similarly, the predictive performance of VQ-DNN is better than that of DNN.
 
-This supplementary material provides predictive results and predictive uncertainties of DNN, VQ-DNN, BNN, and VQ-BNN on five different sequences.
+This material provides predictive results and predictive uncertainties of DNN, VQ-DNN, BNN, and VQ-BNN on five different sequences.
 According to these qualitative results, ___the predictive results of DNN and BNN are noisy___. Their classification results for an object change irregularly and randomly. In contrast, ___the predictive results of VQ-DNN and VQ-BNN are stabilized___. Their predictive results change smoothly. 
 
 
