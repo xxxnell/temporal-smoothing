@@ -2,7 +2,6 @@
 venv
 .ipynb_checkpoints
 __pycache__
-datasets
 models_checkpoints
 leaderboard
 logs

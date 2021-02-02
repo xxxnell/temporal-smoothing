@@ -360,7 +360,7 @@ def camvid_paths(dataset_root):
     :return: train_img_q, train_label_q, val_img_q, val_label_q, test_img_q, test_label_q
     """
     datasets = [], [], [], [], [], []
-    types = "train", "train_labels", "val", "val_labels", "test_avp", "test_avp_labels"
+    types = "train", "train_labels", "val", "val_labels", "test", "test_labels"
     for dataset, typ in zip(datasets, types):
         for filename in sorted(os.listdir("%s/%s" % (dataset_root, typ))):
             dataset.append("%s/%s/%s" % (dataset_root, typ, filename))
