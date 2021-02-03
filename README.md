@@ -87,14 +87,18 @@ We define several metrics for measuring accuracy and uncertainty: Acuracy (Acc) 
 
 This table shows the performance of the methods with semantic segmentation task on the CamVid dataset. We use arrows to indicate which direction is better. According to these results, VQ-BNN performs siignificantly faster than BNNs while estimating predictive results comparable to or even superior to the results of BNNs.
 
+<p align="center">
 <img src="resources/reliability-diagram-extended.png" style="width:100%;">
+</p>
 
 This reliability diagram also shows consistent results that temporal smoothing is an effective method to calibrate results. For more detailed discussion, please refer to the [blog](https://blog.xxxnell.com/posts/temporal-smoothing).
 
 
 ## Theory of VQ-BNN Inference for Data Stream
 
+<p align="center">
 <img src="resources/diagrams.gif" style="width:100%;">
+</p>
 
 It is very easy to implement VQ-BNN _inference_. VQ-BNN is simply the temporal exponential smoothing or _exponential moving average (EMA)_ of BNN's (or deterministic NN's) recent prediction sequence. More precisely, the predictive distribution of VQ-BNN is 
 
