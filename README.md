@@ -1,7 +1,7 @@
 # Vector Quantized Bayesian Neural Network Inference for Data Streams
 
 
-This repository provides an TensorFlow 2 implementation of ["Vector Quantized Bayesian Neural Network (VQ-BNN) Inference for Data Streams"](https://arxiv.org/abs/1907.05911) and other baselines on vision tasks e.g. semantic segmentation. This implementation can be a starting point for uncertainty estimation researches.  
+This repository provides an TensorFlow 2 implementation of ["Vector Quantized Bayesian Neural Network (VQ-BNN) Inference for Data Streams (AAAI 2021)"](https://arxiv.org/abs/1907.05911) which is a temporal smoothing for efficient uncertainty estimation and other baselines on vision tasks e.g. semantic segmentation. This implementation can be a starting point for uncertainty estimation researches.  
 
 __Motivation.__ Although Bayesian neural networks (BNNs) have a lot of theoretical merits such as estimating uncertainties, they has a major disadvantage that makes it difficult to use as a practical tool; *the predictive inference speed of BNNs is dozens of times slower than that of deterministic NNs.* 
 
@@ -58,7 +58,7 @@ The notebook provides deterministic and Bayesian [U-Net](https://link.springer.c
 
 To conduct the experiment, it is required to download the training, test, and _sequence_ datasets manually. There are snippets available for handling [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/) and [CityScape](https://www.cityscapes-dataset.com/) datasets.
 
-We define several metrics for measuring accuracy and uncertainty: Acuracy (Acc) and Acc for certain pixels, Intersection-over-Union (IoU) and IoU for certain pixels (IoU-90), negative log-likelihood (NLL), Expected Calibration Error (ECE), [Unconfidence (Unc-90)](https://arxiv.org/abs/1907.05911), and Frequency for certain pixels (Freq-90). We also provide reliability diagram for visualization.
+We define several metrics for measuring accuracy and uncertainty: Acuracy (Acc) and Acc for certain pixels (Acc-90), Intersection-over-Union (IoU) and IoU for certain pixels (IoU-90), negative log-likelihood (NLL), Expected Calibration Error (ECE), [Unconfidence (Unc-90)](https://arxiv.org/abs/1907.05911), and Frequency for certain pixels (Freq-90). We also provide reliability diagram for visualization.
 
 
 ## Results
