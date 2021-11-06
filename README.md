@@ -1,7 +1,7 @@
 # Vector Quantized Bayesian Neural Network Inference for Data Streams
 
 
-This repository provides an TensorFlow 2 implementation of ["Vector Quantized Bayesian Neural Network (VQ-BNN) Inference for Data Streams (AAAI 2021)"](https://arxiv.org/abs/1907.05911) which is a temporal smoothing for efficient uncertainty estimation and other baselines on vision tasks e.g. semantic segmentation. This implementation can be a starting point for uncertainty estimation researches.  
+This repository provides an TensorFlow implementation of ["Vector Quantized Bayesian Neural Network (VQ-BNN) Inference for Data Streams (AAAI 2021)"](https://arxiv.org/abs/1907.05911) which is a temporal smoothing for efficient uncertainty estimation and other baselines on vision tasks e.g. semantic segmentation. This implementation can be a starting point for uncertainty estimation researches.  
 
 __Motivation.__ Although Bayesian neural networks (BNNs) have a lot of theoretical merits such as estimating uncertainties, they has a major disadvantage that makes it difficult to use as a practical tool; *the predictive inference speed of BNNs is dozens of times slower than that of deterministic NNs.* 
 
@@ -94,19 +94,42 @@ This table shows the performance of the methods with semantic segmentation task 
 This reliability diagram also shows consistent results that temporal smoothing is an effective method to calibrate results. For more detailed discussion, please refer to the [blog](https://blog.xxxnell.com/posts/temporal-smoothing).
 
 
-## Theory of VQ-BNN Inference for Data Stream
+
+## How to Apply Temporal Smoothing to Your Own Model
 
 <p align="center">
 <img src="resources/diagrams.gif" style="width:100%;">
 </p>
 
-It is very easy to implement VQ-BNN _inference_. VQ-BNN is simply the temporal exponential smoothing or _exponential moving average (EMA)_ of BNN's (or deterministic NN's) recent prediction sequence. More precisely, the predictive distribution of VQ-BNN is 
+It is very easy to implement VQ-BNN _inference_. VQ-BNN is simply the temporal exponential smoothing or _exponential moving average (EMA)_ of BNN's (or deterministic NN's) recent prediction sequence. No additional training or modification is needed.
+
+More precisely, the predictive distribution of VQ-BNN is 
 
 <p align="center">
 <img src="https://render.githubusercontent.com/render/math?math=p(\textbf{y} \vert \textbf{x}_0, \mathcal{D}) \simeq \sum_{t=0}^{-K} \pi(\textbf{x}_t \vert \mathcal{S}) \, p(\textbf{y} \vert \textbf{x}_t, \textbf{w}_t)">
 </p>
 
 where <img src="https://render.githubusercontent.com/render/math?math=t"> is integer timestamp, <img src="https://render.githubusercontent.com/render/math?math=\{ \textbf{x}_0, \textbf{x}_{-1}, \cdots \}"> are recent inputs, <img src="https://render.githubusercontent.com/render/math?math=p(\textbf{y} \vert \textbf{x}_t, \textbf{w}_t)"> are recent NN predictions (e.g. softmax of NN logits for classification tasks), and <img src="https://render.githubusercontent.com/render/math?math=\pi(\textbf{x}_t \vert \mathcal{S}) = \frac{\exp(- \vert t \vert / \tau )}{\sum_{0}^{-K} \exp(- \vert t \vert / \tau)}"> are exponentially decaying importances of the predictions with hyperparameter <img src="https://render.githubusercontent.com/render/math?math=\tau">. *No additional training is required.*
+
+
+
+
+## Citation
+
+If you find this useful, please consider citing 📑 the paper and starring 🌟 this repository. Please do not hesitate to contact Namuk Park (email: namuk.park at gmail dot com, twitter: [xxxnell](https://twitter.com/xxxnell)) with any comments or feedback.
+
+```
+@inproceedings{park2021vector,
+  title={Vector Quantized Bayesian Neural Network Inference for Data Streams},
+  author={Park, Namuk and Lee, Taekyu and Kim, Songkuk},
+  booktitle={Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume={35},
+  number={10},
+  pages={9322--9330},
+  year={2021}
+}
+```
+
 
 
 
